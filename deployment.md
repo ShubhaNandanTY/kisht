@@ -36,8 +36,8 @@ The demo data is anchored on the day you run `setup`: it simulates the 150 days 
 
 ## 2. How it is deployed
 
-- **Hosting:** Vercel (Next.js), region `bom1` (Mumbai), so borrower data stays in India and officers get low latency.
-- **Database:** Neon Postgres, also in an India region, connected through `DATABASE_URL`. Same schema and migrations as local.
+- **Hosting:** Vercel (Next.js), server functions in `sin1` (Singapore), next to the database so each query stays in one region.
+- **Database:** Neon Postgres (free plan) in Singapore, added through the Vercel Marketplace, connected through `DATABASE_URL`. Same schema and migrations as local. The Marketplace does not offer an India region; for the client's rollout the database would be Neon or RDS in AWS Mumbai (`ap-south-1`) with functions in `bom1`; only `DATABASE_URL` and `vercel.json` change.
 - **Migrations:** run automatically on every deploy (`vercel-build` = `tsx scripts/migrate.ts && next build`).
 - **Scheduled job:** Vercel Cron calls `GET /api/cron/daily` at 03:30 UTC (9:00 am IST): imports the day's file if it has not been imported yet, settles promises, sends promise reminders. Configured in `vercel.json`.
 - **Seeding the deployed database (once):** run the seed from your machine against the production database:
@@ -50,7 +50,7 @@ The demo data is anchored on the day you run `setup`: it simulates the 150 days 
 ### Steps to deploy your own copy
 
 1. Fork or import the repository into Vercel (vercel.com/new). Framework: Next.js; the build command comes from `vercel.json`.
-2. In the Vercel project, Storage, add **Neon Postgres** (Mumbai region if offered). This sets `DATABASE_URL`.
+2. In the Vercel project, Storage, add **Neon Postgres** (Singapore is the closest region on the Marketplace). This sets `DATABASE_URL`.
 3. Add the environment variables listed below, then deploy.
 4. Seed once with the commands above.
 

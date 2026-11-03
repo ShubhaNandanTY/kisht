@@ -100,7 +100,7 @@
     <text x="22" y="194" fill="#5d6675">Charts, map, import, model</text>
 
     <rect x="270" y="20" width="250" height="190" rx="8" fill="#e6f2ed" stroke="#0e6b4f"/>
-    <text x="284" y="40" font-weight="700">Next.js on Vercel (Mumbai)</text>
+    <text x="284" y="40" font-weight="700">Next.js on Vercel (Singapore)</text>
     <text x="284" y="60" fill="#0a5540">Route handlers (auth, sync, import, drafts)</text>
     <text x="284" y="76" fill="#0a5540">Middleware: session + role guard</text>
     <text x="284" y="96" font-weight="600">Domain (pure, unit-tested)</text>
@@ -135,7 +135,7 @@
   <li><b>An installable web app (PWA), not native.</b> Officers use low-end Android phones. A PWA needs no Play Store release, updates instantly, and handles offline work with IndexedDB and a service worker. The officer bundle is about 120 kB.</li>
   <li><b>Postgres everywhere, two drivers.</b> Neon Postgres in production; <b>PGlite</b> (Postgres compiled to WebAssembly) locally and in integration tests. Reviewers run it with no database install, and the tests use the real SQL dialect and migrations, not a mock.</li>
   <li><b>Drizzle ORM</b>: typed SQL with readable migrations, light enough for serverless cold starts.</li>
-  <li><b>Vercel in <code>bom1</code> (Mumbai)</b>: borrower personal data stays in India (DPDP), low latency for Indore, built-in cron.</li>
+  <li><b>Vercel, functions in <code>sin1</code> (Singapore), next to the database</b>: the nearest region the Vercel Marketplace offers for Neon, about 60 ms from Indore, with built-in cron. For the client's rollout I would move both to AWS Mumbai (Neon or RDS in <code>ap-south-1</code>, functions in <code>bom1</code>) so borrower data stays in India. That changes only <code>DATABASE_URL</code> and <code>vercel.json</code>.</li>
   <li><b>The model is plain TypeScript</b> (about 150 lines of logistic regression), not a Python service. At this data size (thousands of rows) it trains in under a second inside the app, so there is no extra service to deploy, secure or pay for, and every number in it can be explained.</li>
 </ul>
 
@@ -224,7 +224,7 @@
   <tr><td>Access control</td><td>Officers see and log only their branch's loans (drafts and sends only their own assigned loans). Branch managers see only their branch, enforced on the server, not just in the UI. Only the head of collections can retrain.</td></tr>
   <tr><td>Input validation</td><td>zod on every API body and CSV row; file size and type limits; per-event validation in sync batches; the cron endpoint requires a secret (timing-safe compare).</td></tr>
   <tr><td>Secrets</td><td>None in the repository; <code>.env.example</code> lists names only. The demo password is a documented demo value, replaced by <code>SEED_PASSWORD</code>.</td></tr>
-  <tr><td>DPDP Act 2023</td><td>Data minimisation (officers get only their own list); phone numbers masked in the reminder preview; borrower data wiped from the phone on sign-out; India-region hosting; an audit log of log-ins, imports, outcome writes, overrides and retrains. All demo data is invented.</td></tr>
+  <tr><td>DPDP Act 2023</td><td>Data minimisation (officers get only their own list); phone numbers masked in the reminder preview; borrower data wiped from the phone on sign-out; an audit log of log-ins, imports, outcome writes, overrides and retrains. All demo data is invented. The demo is hosted in Singapore; DPDP allows transfers outside India unless the government restricts a country, but for the client I would host in AWS Mumbai, as RBI expects for lending data.</td></tr>
   <tr><td>RBI fair practices</td><td>Contact-hour enforcement on both client and server, an attempt log including blocked attempts, threat-free approved message templates, and no auto-dialler or legal language (out of scope).</td></tr>
 </table>
 
