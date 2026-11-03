@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Kisht: Technical Design Document</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+  :root { --ink:#101828; --muted:#5d6675; --line:#e2e5ea; --accent:#0e6b4f; --soft:#f4f6f8; --danger:#b42318; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Inter", "Segoe UI", Helvetica, Arial, sans-serif; color: var(--ink); font-size: 10.2pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 2mm; letter-spacing: -0.02em; }
+  h2 { font-size: 13.5pt; margin: 9mm 0 2.5mm; padding-top: 2mm; border-top: 1px solid var(--line); break-after: avoid; }
+  h3 { font-size: 11pt; margin: 5mm 0 1.5mm; break-after: avoid; }
+  p { margin: 0 0 2.4mm; }
+  ul, ol { margin: 0 0 2.5mm; padding-left: 5mm; }
+  li { margin: 0.6mm 0; }
+  a { color: var(--accent); text-decoration: none; }
+  code, .mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.8pt; background: var(--soft); padding: 0.2mm 1mm; border-radius: 1mm; }
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0 3.5mm; font-size: 9pt; break-inside: avoid; }
+  th, td { text-align: left; padding: 1.4mm 2mm; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 8.4pt; text-transform: uppercase; letter-spacing: 0.03em; }
+  .muted { color: var(--muted); }
+  .meta { display: grid; grid-template-columns: 30mm 1fr; gap: 1mm 4mm; font-size: 9.6pt; margin: 4mm 0 6mm; padding: 4mm; background: var(--soft); border-radius: 2mm; }
+  .meta b { color: var(--muted); font-weight: 600; }
+  .tag { display: inline-block; font-size: 7.8pt; font-weight: 700; color: var(--accent); background: #e6f2ed; border-radius: 1mm; padding: 0 1.2mm; margin-right: 1mm; }
+  .assume { color: #7a4a00; background: #fdf3e2; }
+  .box { border: 1px solid var(--line); border-radius: 2mm; padding: 3mm 4mm; margin: 2mm 0 3mm; break-inside: avoid; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; margin: 3mm 0; }
+  .shots figure, .wide figure { margin: 0; break-inside: avoid; }
+  .shots img { width: 100%; border: 1px solid var(--line); border-radius: 2mm; }
+  .wide img { width: 100%; border: 1px solid var(--line); border-radius: 2mm; }
+  figcaption { font-size: 8.4pt; color: var(--muted); margin-top: 1mm; line-height: 1.35; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin: 3mm 0; }
+  .kpi { border: 1px solid var(--line); border-radius: 2mm; padding: 2.5mm 3mm; }
+  .kpi .v { font-size: 15pt; font-weight: 700; }
+  .kpi .l { font-size: 8.2pt; color: var(--muted); }
+  .break { break-before: page; }
+  svg text { font-family: inherit; }
+</style>
+</head>
+<body>
+
+<h1>Kisht: field collections for Company A</h1>
+<p class="muted">Technical Design Document · Software Engineering track · Core build slice plus selected extras</p>
+
+<div class="meta">
+  <b>GitHub</b><span><a href="https://github.com/ShubhaNandanTY/kisht">https://github.com/ShubhaNandanTY/kisht</a></span>
+  <b>Live app</b><span>LIVE_URL_PENDING</span>
+  <b>Demo logins</b><span>Password <code>kisht-demo-2026</code> for all. Officer <code>rahul@kisht.demo</code>, branch manager <code>priya@kisht.demo</code>, head of collections <code>meera@kisht.demo</code>. The sign-in page lists them for one-tap login.</span>
+  <b>Author</b><span>Shubhanandan T Y</span>
+  <b>Run locally</b><span><code>npm install &amp;&amp; npm run setup &amp;&amp; npm run dev</code>: no database to install (see deployment.md)</span>
+</div>
+
+<h2>1. What was built</h2>
+<p>Every morning the loan system's overdue file is imported, each overdue loan is scored for how likely it is to roll into the next DPD bucket, and loans are assigned to officers by pincode and workload. Officers open a Hindi-first phone app that shows who matters most today and why, call or navigate with one tap, and log the outcome in three taps, including with no signal. Contact outside 8 am–7 pm is blocked and every attempt is recorded. Promises to pay are tracked to kept or broken, with reminders. Managers see roll rates by branch the same day instead of in Friday's Excel, can override the model's order, and can watch how the model performs week by week.</p>
+
+<table>
+  <tr><th style="width:44%">Core build requirement</th><th>Status</th></tr>
+  <tr><td>Overdue CSV import and auto-assignment (pincode + workload)</td><td>Done. Validated upload with row-level errors, plus a mocked loan-system pull and a 9 am cron. Continuity-first assignment.</td></tr>
+  <tr><td>Officer priority list, call and map buttons, outcome logging with GPS</td><td>Done. Paid / promise / not reachable / dispute in three taps; GPS distance to the shop; late-entry path.</td></tr>
+  <tr><td>Promise tracker</td><td>Done. Open, kept, broken, superseded; officer and manager views; reminders to borrower (SMS, mocked) and officer (in-app).</td></tr>
+  <tr><td>Manager roll-rate view</td><td>Done. By branch and month, matured and model-projected, against the 22% baseline and 16% target.</td></tr>
+  <tr><td>Roles: field officer and branch manager</td><td>Done, plus head of collections (all branches, retraining).</td></tr>
+  <tr><td>AI priority score with reasons</td><td>Done. A logistic regression trained on history, top three reasons per loan, confidence label, weekly back-test, manager override.</td></tr>
+  <tr><td>Hard part: offline logging with sync</td><td>Done. IndexedDB cache and outbox, service worker shell, idempotent sync, server re-validation.</td></tr>
+  <tr><td>Hard part: 8 am–7 pm contact block</td><td>Done. Enforced on the phone and on the server, IST regardless of device timezone, every attempt recorded.</td></tr>
+  <tr><td>Optional depth from the must-have list</td><td>AI-drafted Hindi/English reminders from approved templates with a word filter; officer activity log with a visit map; broken-promise dashboard.</td></tr>
+</table>
+
+<h2>2. Assumptions</h2>
+<p>The brief leaves these open. Each is labelled, and the code reflects it.</p>
+<table>
+  <tr><th style="width:8%">#</th><th>Assumption</th></tr>
+  <tr><td><span class="tag assume">A1</span></td><td>Roll rate is measured by <b>entry cohort</b>: of the loans that fell 1 day past due in a period, the share that reached 31 DPD. This matches the brief's "450 a month fall 1–30 DPD, 22% roll".</td></tr>
+  <tr><td><span class="tag assume">A2</span></td><td>The demo covers <b>3 branches</b> (Siyaganj, Sanwer Road, Pithampur), <b>12 officers</b>, 3 branch managers and a head of collections. With about 190 loans falling due a month and roughly 140 live overdue loans, each officer has 9–17 loans, a realistic "short list". Branch names and pincodes are invented.</td></tr>
+  <tr><td><span class="tag assume">A3</span></td><td>The loan system's daily export has one row per overdue loan with: loan ID, borrower, business type, phone, address, pincode, branch, outstanding, overdue amount, DPD, EMI, last payment date and amount, missed EMIs in 12 months, months on book, and optionally language and coordinates. Loans missing from the day's file have been paid up.</td></tr>
+  <tr><td><span class="tag assume">A4</span></td><td>Loans above 90 DPD are NPA and move to legal recovery (out of scope), so they leave field lists.</td></tr>
+  <tr><td><span class="tag assume">A5</span></td><td>A promise is <b>kept</b> if at least 90% of the promised amount is paid between the promise and the day after the promised date (payments show up in the next morning's file). Otherwise it is broken. A new promise replaces an open one.</td></tr>
+  <tr><td><span class="tag assume">A6</span></td><td>Contact hours are 8:00 to 18:59 IST, all days. A visit logged after 7 pm is accepted only if the officer states it happened inside the window (flagged as a late entry).</td></tr>
+  <tr><td><span class="tag assume">A7</span></td><td>The officer UI is Hindi by default with an English toggle. The manager UI is English (head office works in English Excel today). All borrower-facing messages use the borrower's language.</td></tr>
+  <tr><td><span class="tag assume">A8</span></td><td>Payments, SMS/WhatsApp, the loan system and maps are mocked or use free services (OpenStreetMap tiles; Google Maps links for directions). No real message is sent.</td></tr>
+  <tr><td><span class="tag assume">A9</span></td><td>All history is synthetic, produced by a documented day-by-day simulation (section 6.1). The three loans in the brief are reproduced exactly, with dates relative to the seeding day (on 3 Nov 2026 they match the brief exactly).</td></tr>
+  <tr><td><span class="tag assume">A10</span></td><td>A visit counts as "at the shop" within 500 m, because cheap phones' GPS drifts. Missing GPS never blocks a log (weak signal is the norm); it is flagged instead.</td></tr>
+</table>
+
+<h2>3. Architecture</h2>
+<svg viewBox="0 0 760 250" width="100%" role="img" aria-label="Architecture">
+  <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5d6675"/></marker></defs>
+  <g font-size="11">
+    <rect x="10" y="20" width="200" height="96" rx="8" fill="#f4f6f8" stroke="#e2e5ea"/>
+    <text x="22" y="40" font-weight="700">Officer phone (PWA)</text>
+    <text x="22" y="58" fill="#5d6675">React · Hindi/English</text>
+    <text x="22" y="74" fill="#5d6675">IndexedDB: day's list + outbox</text>
+    <text x="22" y="90" fill="#5d6675">Service worker: app shell</text>
+    <text x="22" y="106" fill="#5d6675">GPS · tel: · maps link</text>
+    <rect x="10" y="140" width="200" height="70" rx="8" fill="#f4f6f8" stroke="#e2e5ea"/>
+    <text x="22" y="160" font-weight="700">Manager browser</text>
+    <text x="22" y="178" fill="#5d6675">Server-rendered dashboard</text>
+    <text x="22" y="194" fill="#5d6675">Charts, map, import, model</text>
+
+    <rect x="270" y="20" width="250" height="190" rx="8" fill="#e6f2ed" stroke="#0e6b4f"/>
+    <text x="284" y="40" font-weight="700">Next.js on Vercel (Mumbai)</text>
+    <text x="284" y="60" fill="#0a5540">Route handlers (auth, sync, import, drafts)</text>
+    <text x="284" y="76" fill="#0a5540">Middleware: session + role guard</text>
+    <text x="284" y="96" font-weight="600">Domain (pure, unit-tested)</text>
+    <text x="284" y="112" fill="#0a5540">contact window · assignment · CSV</text>
+    <text x="284" y="128" fill="#0a5540">promises · roll rates · scoring model</text>
+    <text x="284" y="144" fill="#0a5540">message templates + safety filter</text>
+    <text x="284" y="164" font-weight="600">Jobs</text>
+    <text x="284" y="180" fill="#0a5540">Cron 9:00 IST: import, settle, remind</text>
+    <text x="284" y="196" fill="#0a5540">Retrain + back-test (head only)</text>
+
+    <rect x="580" y="20" width="170" height="80" rx="8" fill="#f4f6f8" stroke="#e2e5ea"/>
+    <text x="592" y="40" font-weight="700">Postgres</text>
+    <text x="592" y="58" fill="#5d6675">Neon in production</text>
+    <text x="592" y="74" fill="#5d6675">PGlite (embedded) locally</text>
+    <text x="592" y="90" fill="#5d6675">Drizzle migrations</text>
+    <rect x="580" y="120" width="170" height="90" rx="8" fill="#fff" stroke="#e2e5ea" stroke-dasharray="4 3"/>
+    <text x="592" y="140" font-weight="700">Outside systems</text>
+    <text x="592" y="158" fill="#5d6675">Loan system export (mocked)</text>
+    <text x="592" y="174" fill="#5d6675">SMS gateway (mocked)</text>
+    <text x="592" y="190" fill="#5d6675">Claude API (optional)</text>
+  </g>
+  <g stroke="#5d6675" stroke-width="1.4" fill="none" marker-end="url(#a)">
+    <path d="M210 60 H266"/><path d="M210 176 H266"/><path d="M520 60 H576"/><path d="M520 165 H576"/>
+  </g>
+  <text x="214" y="54" font-size="9" fill="#5d6675">sync batch</text>
+  <text x="18" y="235" font-size="9.5" fill="#5d6675">One TypeScript codebase. The domain layer has no framework or database imports, so the rules regulators care about are testable in isolation.</text>
+</svg>
+
+<h3>Why this stack</h3>
+<ul>
+  <li><b>Next.js (React + TypeScript), one codebase</b> for the officer app, the manager dashboard and the API. For an 8-week, ₹9 lakh budget, one deployable unit and one language beats separate mobile, web and backend projects.</li>
+  <li><b>An installable web app (PWA), not native.</b> Officers use low-end Android phones. A PWA needs no Play Store release, updates instantly, and handles offline work with IndexedDB and a service worker. The officer bundle is about 120 kB.</li>
+  <li><b>Postgres everywhere, two drivers.</b> Neon Postgres in production; <b>PGlite</b> (Postgres compiled to WebAssembly) locally and in integration tests. Reviewers run it with no database install, and the tests use the real SQL dialect and migrations, not a mock.</li>
+  <li><b>Drizzle ORM</b>: typed SQL with readable migrations, light enough for serverless cold starts.</li>
+  <li><b>Vercel in <code>bom1</code> (Mumbai)</b>: borrower personal data stays in India (DPDP), low latency for Indore, built-in cron.</li>
+  <li><b>The model is plain TypeScript</b> (about 150 lines of logistic regression), not a Python service. At this data size (thousands of rows) it trains in under a second inside the app, so there is no extra service to deploy, secure or pay for, and every number in it can be explained.</li>
+</ul>
+
+<h2>4. Data model</h2>
+<table>
+  <tr><th style="width:20%">Table</th><th style="width:40%">Key fields</th><th>Why it exists</th></tr>
+  <tr><td><code>loans</code></td><td>id, borrower, phone, pincode, lat/lng, branch, outstanding, overdue, dpd, missed EMIs, status (overdue/cured/npa), assigned officer, manager rank, score, risk probability, confidence, reasons (JSON)</td><td>Current state from the latest file, plus the latest score and assignment. Officers read only their own rows.</td></tr>
+  <tr><td><code>snapshots</code></td><td>as-of date, loan, branch, officer, dpd, overdue, last payment, score, probability. Unique (date, loan)</td><td>One row per overdue loan per daily file. The source of truth for roll rates, model training and the back-test (what the model said on that day versus what happened).</td></tr>
+  <tr><td><code>outcomes</code></td><td>id (UUID made on the phone), type, amount, occurred / captured / received times, GPS, distance to shop, flags</td><td>Every visit result. The client-generated id makes offline sync idempotent; the three timestamps separate when it happened, when it was typed and when it reached the server.</td></tr>
+  <tr><td><code>promises</code></td><td>loan, officer, promised date, amount, status, created / resolved</td><td>Promise lifecycle. The resolved time lets features be rebuilt as they were known on any past day (no leakage).</td></tr>
+  <tr><td><code>contact_attempts</code></td><td>loan, officer, channel (call/visit/message), time, allowed, block reason</td><td>Every contact attempt, including blocked ones: the RBI audit trail.</td></tr>
+  <tr><td><code>messages</code></td><td>recipient, channel, language, template, body, status (sent/scheduled/blocked), source (ai/template/system)</td><td>Mock SMS and in-app log, and a record of exactly what each borrower was told.</td></tr>
+  <tr><td><code>imports</code>, <code>model_versions</code>, <code>audit_log</code>, <code>users</code>, <code>branches</code></td><td>file stats and row errors; model weights and metrics; who did what; role, branch, pincodes, max load</td><td>Operations, model governance and DPDP accountability (log-ins, imports, overrides, outcome writes).</td></tr>
+</table>
+
+<h2>5. Main flows</h2>
+<h3>5.1 Daily import → score → assign</h3>
+<ol>
+  <li>The file arrives (upload, mocked loan-system pull, or the 9 am cron). Each row is validated (zod): ID format, 10-digit Indian mobile, 6-digit pincode, known branch, overdue ≤ outstanding, no future payment dates, duplicates, spreadsheet-formula prefixes stripped. Bad rows are listed by line and skipped; the rest import.</li>
+  <li><b>Guards:</b> a file older than the latest import is refused (no rewinding history). A file covering less than half of today's overdue book is refused unless the manager confirms, because missing loans count as paid up and a truncated export would otherwise wipe every list. Re-importing the same day replaces it, so a corrected file is safe.</li>
+  <li>Loans are bulk-upserted; missing loans become <i>cured</i>; above 90 DPD become <i>NPA</i> and leave field lists. That day's snapshot is written.</li>
+  <li>Open promises are settled (kept or broken) from the new payment data and officer-reported payments.</li>
+  <li>Every live loan is scored, then assigned: keep the current officer if they cover the pincode and have room; otherwise the least-loaded officer covering that pincode, highest scores first; then any officer in the branch with room ("outside territory"); then the least-loaded officer anyway ("over capacity"), so no loan goes unworked. Managers see these notes. Manager pins reset with each import.</li>
+</ol>
+
+<h3>5.2 Officer day, three-tap logging and offline sync</h3>
+<ol>
+  <li>On open, the app shows the list cached in IndexedDB immediately, then fetches a fresh one. One response holds everything the day needs (list, reasons, promises, history), so detail screens work with no signal.</li>
+  <li><b>Tap 1</b> Log outcome (GPS starts reading in the background); <b>tap 2</b> Paid / Promise / Not reachable / Dispute; <b>tap 3</b> Save. Promise date (tomorrow) and amount (overdue) are prefilled. Notes are optional chips, not typing.</li>
+  <li>The event, with a UUID, device times and GPS, goes into the IndexedDB outbox and is applied to the screen at once. A sync runs immediately, on reconnect, when the app returns to the foreground, and every 30 s, backing off from 5 s up to 5 min. A 401 pauses sync and asks the officer to sign in again; the queue is never dropped. Sign-out warns about unsynced records, then wipes local borrower data.</li>
+  <li>The server checks each event on its own: a duplicate id returns "duplicate" (a retry is safe); a loan from another branch is rejected; times are rechecked (below); GPS distance to the shop is computed; a loan reassigned since the phone last synced is still accepted (the visit happened) but flagged. A new promise supersedes the open one in the same transaction.</li>
+</ol>
+
+<h3>5.3 The 8 am–7 pm rule</h3>
+<ul>
+  <li><b>On the phone:</b> the header shows whether contact is allowed. Call and Send reminder outside the window show the RBI reason, and the attempt is queued and recorded. Logging after 7 pm asks when the contact happened (8:00–18:59 only).</li>
+  <li><b>On the server (authoritative):</b> all checks use IST, not the device timezone. Attempts are judged by the server, whatever the phone claims. Contacts outside the window are rejected and stored as blocked attempts. Device times more than 10 minutes in the future (a manipulated clock) and records older than 7 days are rejected. Late entry, next-day logging and late sync are flagged for the manager. Reminder sends are checked at send time.</li>
+  <li><b>Demo clock</b> (only when <code>DEMO_MODE=true</code>): lets a reviewer set the app to 10:30 am or 7:30 pm IST to see both states at any hour. Phone and server shift together.</li>
+</ul>
+
+<h3>5.4 Promises and reminders</h3>
+<p>The 9 am job sends the borrower an SMS the day before and on the promised day (mocked), and gives the officer an in-app reminder on the day. If it runs outside the window, messages are scheduled for 9 am instead of sent. Broken promises (no qualifying payment by the grace day) appear on the officer's Promises tab, on the loan card, as a reason in the model, and on the manager overview.</p>
+
+<h3>5.5 Roll rate without waiting for Friday</h3>
+<p>Roll rate by entry cohort (A1) is computed from the daily snapshots by branch and month. A cohort is "matured" once its last loan has had 30 days to roll. For cohorts still maturing, the dashboard shows a <b>projection</b>: loans that have already rolled plus the model's probability for each loan still open. Managers see this month's likely roll rate today, drawn dashed so it is never mistaken for an actual. Seeded baseline: <b>22.5%</b> over the last matured 30 days (169 loans), against the brief's 22% and the 16% target.</p>
+
+<h2>6. How the AI works, and what happens when it is wrong</h2>
+<h3>6.1 Priority score</h3>
+<div class="box">
+  <p><b>Question the model answers:</b> "Will this loan cross into the next bucket (31, 61 or 91 DPD) before it is paid?" Score = that probability × 100. The question has urgency built in: a 27-DPD loan has 4 days to pay, a 5-DPD loan has 26, so the score rises naturally as the boundary nears. It is also the event that drives the client's KPI.</p>
+  <p><b>Inputs (11):</b> DPD; days to the next bucket; days since last payment; missed EMIs in 12 months; broken and kept promises in 90 days; not reachable in 14 days; open dispute; promise pending; outstanding amount (log); months on book. These cover the brief's "DPD, payment and promise history and amount".</p>
+  <p><b>Model:</b> L2-regularised logistic regression on standardised inputs, trained on replayed history. Every feature is rebuilt as it was known on that day (a promise counts as broken only after it was known to be broken), so there is no leakage. <b>Sign constraints</b> stop correlated inputs from producing reasons that read backwards: for example, a missed EMI can only raise risk. This cost under 0.01 AUC.</p>
+  <p><b>Reasons:</b> for each input, the exact change in score if that input were at the portfolio average (not a rule of thumb). The top three are shown in plain Hindi or English, e.g. "27 DPD · rolls to 31+ in 4 days", "Broke 2 promises in 90 days", "Promise to pay pending ↓". DPD and days-to-bucket merge into one reason.</p>
+</div>
+<div class="kpis">
+  <div class="kpi"><div class="v">0.73</div><div class="l">AUC on held-out weeks (out of time)</div></div>
+  <div class="kpi"><div class="v">45%</div><div class="l">of loans that rolled were in the top 30% of that day's scores</div></div>
+  <div class="kpi"><div class="v">0.213</div><div class="l">Brier score (constant guess ≈ 0.25)</div></div>
+  <div class="kpi"><div class="v">2,430</div><div class="l">training loan-days; tested on 1,391 later ones</div></div>
+</div>
+<p class="muted"><b>Where the history comes from (A9):</b> <code>src/server/demo/simulate.ts</code> replays 150 days of the book for about 2,300 loans. Each borrower has a hidden risk factor the app never sees; EMIs fall due monthly, officers visit, borrowers promise, pay, part-pay, become unreachable, cure or roll, and loans go NPA after 90 DPD. Only part of the hidden risk shows through observable behaviour (missed EMIs, broken promises, reachability, recent part-payments), so the model has to learn it the way it would from real data. The simulation is tuned to the brief's 22% roll rate. These numbers come from that synthetic data. They show the pipeline works end to end and is measured honestly. They are not a claim about Company A's real borrowers; the weekly back-test would measure that from the first month of real use.</p>
+
+<p><b>When the score is wrong or unsure:</b></p>
+<ul>
+  <li><b>It is advisory.</b> The card says so; officers can visit in any order and every reason is visible.</li>
+  <li><b>Confidence labels:</b> <i>low</i> for new loans (under 6 months), unusual inputs (more than 4 standard deviations from the training data) or no trained model; <i>medium</i> when nothing has been logged for 30 days. Shown on the officer card and in the manager list.</li>
+  <li><b>Managers override</b> by pinning, reordering or reassigning (audited, reset daily).</li>
+  <li><b>Weekly back-test</b> on the model page: each week, the scores loans had that day against whether they rolled, with AUC, top-30% capture and calibration bands. Training and held-out weeks are marked.</li>
+  <li><b>Retrain with a no-regression gate:</b> the head of collections can retrain on all history. The new model goes live only if its held-out AUC is at least as good (within 0.01), so a bad batch of data cannot quietly make lists worse.</li>
+  <li><b>No model?</b> Hand-set starting rules are used and every score is marked low confidence.</li>
+</ul>
+
+<h3>6.2 AI-drafted reminders</h3>
+<ul>
+  <li>Four borrower templates (overdue, promise due tomorrow, promise due today, missed promise) and one officer template, in Hindi and English. These are the "approved templates". The server offers only those that are true for the loan today; for example, "due tomorrow" is never offered for a promise due today.</li>
+  <li>If <code>ANTHROPIC_API_KEY</code> is set, Claude (<code>claude-opus-5-5</code>, low effort, server-side refusal fallback) rewrites the filled template more warmly, with instructions to keep every fact and never threaten.</li>
+  <li>Every draft, AI or template, must pass <code>checkDraft</code>: a Hindi and English blocklist (police, court, legal action, family, neighbours, warning, पुलिस, कोर्ट, परिवार, धमकी, वरना…; Hindi matching ignores the nukta, so ज़ब्त = जब्त); the exact rupee amount; the promised date and no other date; the loan ID; no links; no new phone numbers; 360 characters at most. On any failure the AI text is discarded, the approved template is shown, and the officer sees why.</li>
+  <li>Drafts are <b>signed</b> (HMAC). The send endpoint only accepts text the draft endpoint produced, so nothing else can be sent through the API. <b>Nothing sends without the officer's tap</b>, and sends are blocked and recorded outside 8 am–7 pm.</li>
+  <li>Tested with a mocked model: a faithful rewrite is used; a threatening one and one with a changed amount are both rejected and fall back to the template.</li>
+</ul>
+
+<h2>7. Security, privacy and compliance</h2>
+<table>
+  <tr><th style="width:24%">Area</th><th>What the app does</th></tr>
+  <tr><td>Sign-in and roles</td><td>bcrypt passwords; HS256-signed httpOnly, SameSite cookie (7 days, so a day offline does not log an officer out); login throttling (5 failures per 15 min per email and IP); timing-safe handling of unknown emails. Middleware guards pages; every API route checks its role.</td></tr>
+  <tr><td>Access control</td><td>Officers see and log only their branch's loans (drafts and sends only their own assigned loans). Branch managers see only their branch, enforced on the server, not just in the UI. Only the head of collections can retrain.</td></tr>
+  <tr><td>Input validation</td><td>zod on every API body and CSV row; file size and type limits; per-event validation in sync batches; the cron endpoint requires a secret (timing-safe compare).</td></tr>
+  <tr><td>Secrets</td><td>None in the repository; <code>.env.example</code> lists names only. The demo password is a documented demo value, replaced by <code>SEED_PASSWORD</code>.</td></tr>
+  <tr><td>DPDP Act 2023</td><td>Data minimisation (officers get only their own list); phone numbers masked in the reminder preview; borrower data wiped from the phone on sign-out; India-region hosting; an audit log of log-ins, imports, outcome writes, overrides and retrains. All demo data is invented.</td></tr>
+  <tr><td>RBI fair practices</td><td>Contact-hour enforcement on both client and server, an attempt log including blocked attempts, threat-free approved message templates, and no auto-dialler or legal language (out of scope).</td></tr>
+</table>
+
+<h2 class="break">8. UI and design decisions</h2>
+<p>The brief asks for minimal design and one-handed use. Rules used everywhere: one accent colour (deep green), with red and amber only for meaning (risk, broken promises, blocked contact); white space instead of boxes; Inter plus Noto Sans Devanagari with extra line height for Hindi matras; tap targets of at least 44 px (outcome tiles 96 px); everything an officer needs sits in the bottom half of the screen.</p>
+<div class="shots">
+  <figure><img src="screens/02-officer-list.jpg" /><figcaption><b>Today.</b> A short list ordered by score. One reason per row (the one that moved it most), the overdue amount, and a promise chip. Sync and contact-hour status sit at the top.</figcaption></figure>
+  <figure><img src="screens/03-loan-detail.jpg" /><figcaption><b>Why this borrower.</b> Score as a plain-language chance, three reasons with ↑/↓ and their weight, a confidence label and an "advisory" note. Facts the officer asks about at the shop.</figcaption></figure>
+  <figure><img src="screens/04-log-outcome.jpg" /><figcaption><b>Three taps.</b> A bottom sheet within thumb reach, four large tiles, prefilled date and amount. GPS status is shown but never blocks saving.</figcaption></figure>
+  <figure><img src="screens/05-contact-blocked.jpg" /><figcaption><b>Blocked, explained, recorded.</b> After 7 pm a call is not placed; the officer sees the RBI reason and when contact reopens.</figcaption></figure>
+  <figure><img src="screens/01-login.jpg" /><figcaption><b>Sign-in.</b> Language toggle before sign-in; demo accounts (demo mode only) for reviewers.</figcaption></figure>
+  <div class="box" style="align-self:start"><b>States.</b> Every screen has loading, empty ("no borrowers on your list"), error with retry, stale ("showing the list saved at 6:25 pm") and offline states. Charts follow a validated colour-blind-safe palette with legends, direct labels and hover tooltips, and draw at the device's real width so text stays legible on phones.</div>
+</div>
+<div class="grid2 wide">
+  <figure><img src="screens/06-manager-overview.jpg" /><figcaption><b>Overview.</b> The four numbers the CEO's success criteria name (roll rate, projected roll rate, same-day logging, broken promises), then roll rate by branch and month against target and baseline. Projected months are dashed.</figcaption></figure>
+  <figure><img src="screens/07-officer-list-and-visits.jpg" /><figcaption><b>An officer's day.</b> The list with reasons and pin/reorder/reassign; visits on a map joined to each shop, with flags (far from shop, synced late, late entry).</figcaption></figure>
+  <figure><img src="screens/08-model-backtest.jpg" /><figcaption><b>Model.</b> Held-out quality in plain words, predicted versus actual by score band, the weekly back-test, the weights, and how wrong scores are handled.</figcaption></figure>
+  <figure><img src="screens/09-import-validation.jpg" /><figcaption><b>Import.</b> Row-level errors with line numbers, and the partial-file guard that stops a truncated export from clearing every list.</figcaption></figure>
+</div>
+
+<h2>9. Testing</h2>
+<p><b>69 automated tests</b> (Vitest), run with <code>npm test</code>:</p>
+<ul>
+  <li><b>Unit (54):</b> contact window and IST handling, offline time checks (late sync, late entry, future clock, too old); assignment (territory, balancing, continuity, overflow, capacity); CSV (normalisation, row errors, duplicates, formula stripping, missing columns); promise evaluation (grace day, part payment, cure, officer-reported payment); roll-rate cohorts and projections; feature leakage; AUC; training learning the right directions; reasons and confidence; templates passing their own filter; Hindi and English blocklists; draft checks (amount, date, link, phone, loan ID); sync batch validation.</li>
+  <li><b>Integration (15)</b> on in-memory Postgres with the real migrations: idempotent sync and retry, promise superseding, 7 pm rejection with the attempt recorded, server-side attempt verdicts, far-from-shop flag, branch access, import with assignment, partial-file guard, cures and NPA, no rewinding, signed drafts (tampered text rejected), reminders blocked after 7 pm, other officers' borrowers refused, AI rewrite accepted or rejected (mocked model).</li>
+  <li><b>Manual in the browser:</b> three-tap logging, blocked call, offline logging with the server stopped and automatic sync on recovery, pin/reorder, import errors, at both phone and desktop widths.</li>
+</ul>
+
+<h2>10. What I cut, and what I would do next</h2>
+<div class="grid2">
+  <div>
+    <h3>Cut or simplified</h3>
+    <ul>
+      <li>Real SMS/WhatsApp, loan-system and payment integrations (mocked, as the brief allows).</li>
+      <li>A native Android app and Play Store distribution (a PWA instead).</li>
+      <li>Background Sync API (not on iOS); foreground retries cover the same ground.</li>
+      <li>Hindi for the manager screens (officer screens and borrower messages are bilingual).</li>
+      <li>User administration screens: officers, pincodes and caps are seeded.</li>
+      <li>Login throttling is per server instance; production would use a shared store.</li>
+    </ul>
+  </div>
+  <div>
+    <h3>Next</h3>
+    <ul>
+      <li>Pilot with one branch for 4 weeks; replace synthetic history with 6–12 months of real exports and retrain; publish the real back-test.</li>
+      <li>SFTP pull from the loan system, and a WhatsApp Business API provider with DLT-registered templates.</li>
+      <li>An "expected loss" lens next to the roll score (probability × outstanding × 0.20 × 0.35) for the head of collections.</li>
+      <li>Consent records and a data-retention job (DPDP), plus encryption of the on-device cache.</li>
+      <li>Officer-level coaching view: logging same-day %, promise keep rate, reachability.</li>
+      <li>Measure the 4-month success criteria: roll rate 22% → 16%, 95% same-day logging, weekly Excel stopped.</li>
+    </ul>
+  </div>
+</div>
+
+<h2>11. Honest limits</h2>
+<ul>
+  <li>Model quality is measured on simulated data. The simulation hides a "true" risk factor per borrower and lets only part of it show through observable behaviour, so the model has something real to learn. Real-world performance is unknown until real data is back-tested.</li>
+  <li>The device clock can still be wrong in the past direction, within 7 days. That is flagged, not proven; a stronger version would sign server time when the day's list is fetched.</li>
+  <li>GPS on low-end phones can be off by hundreds of metres, so "far from shop" is a prompt for a conversation, not proof of a missed visit.</li>
+  <li>The local embedded database allows one process at a time, so stop the dev server before reseeding. Production uses Neon and has no such limit.</li>
+</ul>
+
+<p class="muted" style="margin-top:8mm">Business case from the brief, for reference: 27 fewer rolls a month × 12 × ₹35,000 = ₹1.134 crore, plus ₹49.5 lakh of manual reporting time, ≈ ₹1.63 crore a year against a ₹9 lakh build.</p>
+</body>
+</html>

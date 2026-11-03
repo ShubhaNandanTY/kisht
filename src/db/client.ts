@@ -31,5 +31,17 @@ function create(): DB {
 
 const globalForDb = globalThis as unknown as { __kishtDb?: DB };
 
-export const db: DB = globalForDb.__kishtDb ?? (globalForDb.__kishtDb = create());
+function instance(): DB {
+  return (globalForDb.__kishtDb ??= create());
+}
+
+// Opened on first use, not on import: `next build` imports every route in several workers,
+// and none of them should open (or contend for) the database.
+export const db: DB = new Proxy({} as DB, {
+  get(_target, prop) {
+    const real = instance();
+    const value = Reflect.get(real, prop, real);
+    return typeof value === "function" ? value.bind(real) : value;
+  },
+});
 export { schema };

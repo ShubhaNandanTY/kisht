@@ -110,9 +110,11 @@ export function ImportPanel({ today, latest }: { today: string; latest: string |
             <div className="rounded-xl bg-danger-soft p-4 text-sm text-danger">
               {fatal(result.error)}
               {result.error.startsWith("partial_file:") && (
-                <Button size="sm" variant="danger" className="mt-3" disabled={!!busy} onClick={() => upload(true)}>
-                  Import anyway
-                </Button>
+                <div className="mt-3">
+                  <Button size="sm" variant="danger" disabled={!!busy} onClick={() => upload(true)}>
+                    Import anyway
+                  </Button>
+                </div>
               )}
               {result.errors && result.errors.length > 0 && <ErrorTable errors={result.errors} />}
             </div>
@@ -145,7 +147,7 @@ function ErrorTable({ errors }: { errors: { row: number; loanId?: string; messag
         <tbody className="divide-y divide-line">
           {errors.slice(0, 100).map((e, i) => (
             <tr key={i}>
-              <td className="num w-14 px-3 py-1.5 text-muted">Line {e.row}</td>
+              <td className="num w-16 px-3 py-1.5 whitespace-nowrap text-muted">Line {e.row}</td>
               <td className="w-24 py-1.5 font-mono">{e.loanId ?? "–"}</td>
               <td className="px-3 py-1.5">{e.message}</td>
             </tr>

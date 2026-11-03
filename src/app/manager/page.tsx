@@ -152,7 +152,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Card title="Team today" action={<Link href={`/manager/team${q}`} className="text-sm text-accent">All lists →</Link>}>
           <div className="-mx-5 overflow-x-auto">
-            <table className="w-full min-w-[520px] text-sm">
+            <table className="w-full min-w-[440px] text-sm">
               <thead>
                 <tr className="text-left text-xs text-muted">
                   <th className="px-5 pb-2 font-normal">Officer</th>
