@@ -26,6 +26,23 @@ export type Example = { x: FeatureVector; y: 0 | 1 };
 const sigmoid = (z: number) => 1 / (1 + Math.exp(-z));
 
 /**
+ * Allowed direction for each weight (+1 can only raise risk, -1 can only lower it, 0 is free).
+ * Correlated inputs can otherwise take a sign that is right for the maths but nonsense to an
+ * officer ("not paying for longer lowers risk"). Constraining signs is standard in credit
+ * scorecards and keeps every reason on screen believable.
+ */
+export const SIGNS: Partial<Record<FeatureName, 1 | -1>> = {
+  daysToNextBucket: -1,
+  daysSinceLastPayment: 1,
+  missedEmis12m: 1,
+  brokenPromises90d: 1,
+  keptPromises90d: -1,
+  notReachable14d: 1,
+  openDispute: 1,
+  hasActivePromise: -1,
+};
+
+/**
  * Hand-set starting weights, used until enough history exists to train a model.
  * Signs follow collections practice: older, unpaid, broken-promise, unreachable loans roll.
  */
@@ -85,7 +102,11 @@ export function train(examples: Example[], opts: { iterations?: number; learning
       for (let j = 0; j < w.length; j++) gw[j] += err * X[r][j];
     }
     b -= (lr * gb) / n;
-    for (let j = 0; j < w.length; j++) w[j] -= lr * (gw[j] / n + l2 * w[j]);
+    for (let j = 0; j < w.length; j++) {
+      w[j] -= lr * (gw[j] / n + l2 * w[j]);
+      const sign = SIGNS[features[j]];
+      if (sign && w[j] * sign < 0) w[j] = 0; // projected gradient step onto the allowed sign
+    }
   }
 
   return { kind: "logistic", features, weights: w, bias: b, means, stds };

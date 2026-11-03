@@ -3,6 +3,7 @@ import { drizzle as drizzlePglite } from "drizzle-orm/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import postgres from "postgres";
 import path from "node:path";
+import fs from "node:fs";
 import * as schema from "./schema";
 
 export type DB = PostgresJsDatabase<typeof schema>;
@@ -17,6 +18,7 @@ function create(): DB {
     return drizzlePostgres(client, { schema });
   }
   const dir = process.env.PGLITE_DIR ?? path.join(process.cwd(), ".data", "pglite");
+  fs.mkdirSync(dir, { recursive: true });
   const client = new PGlite(dir);
   return drizzlePglite(client, { schema }) as unknown as DB;
 }

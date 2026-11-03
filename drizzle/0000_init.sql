@@ -61,6 +61,7 @@ CREATE TABLE "loans" (
 	"last_payment_amount" integer,
 	"status" text DEFAULT 'overdue' NOT NULL,
 	"overdue_since" date,
+	"cured_on" date,
 	"last_import_date" date,
 	"assigned_officer_id" text,
 	"assignment_note" text,
@@ -107,6 +108,7 @@ CREATE TABLE "outcomes" (
 	"amount" integer,
 	"note" text,
 	"occurred_at" timestamp with time zone NOT NULL,
+	"captured_at" timestamp with time zone NOT NULL,
 	"received_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"lat" real,
 	"lng" real,
@@ -138,6 +140,8 @@ CREATE TABLE "snapshots" (
 	"dpd" integer NOT NULL,
 	"outstanding" integer NOT NULL,
 	"overdue_amount" integer NOT NULL,
+	"last_payment_date" date,
+	"last_payment_amount" integer,
 	"score" integer,
 	"risk_probability" real
 );

@@ -1,5 +1,5 @@
 {
-  "id": "d6460fc5-df4d-402d-80fe-a7232923bc84",
+  "id": "0186bb4e-bfa5-4c1c-8aa7-505248ea6856",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -443,6 +443,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "cured_on": {
+          "name": "cured_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
         "last_import_date": {
           "name": "last_import_date",
           "type": "date",
@@ -796,6 +802,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "captured_at": {
+          "name": "captured_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
         "received_at": {
           "name": "received_at",
           "type": "timestamp with time zone",
@@ -1091,6 +1103,18 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "last_payment_date": {
+          "name": "last_payment_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_payment_amount": {
+          "name": "last_payment_amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "score": {
           "name": "score",
