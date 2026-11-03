@@ -1,0 +1,48 @@
+{
+  "name": "kisht",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Field collections app for an NBFC: prioritised daily lists, offline outcome logging, promise tracking and roll-rate reporting.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "vercel-build": "tsx scripts/migrate.ts && next build",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "setup": "npm run db:migrate && npm run db:seed",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.3.16",
+    "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.44.7",
+    "idb": "^8.0.4",
+    "jose": "^6.2.15",
+    "leaflet": "^1.9.4",
+    "next": "^15.5.28",
+    "papaparse": "^5.7.0",
+    "postgres": "^3.4.9",
+    "react": "^19.1.10",
+    "react-dom": "^19.1.10",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/leaflet": "^1.9.22",
+    "@types/node": "^22.20.5",
+    "@types/papaparse": "^5.5.2",
+    "@types/react": "19.1",
+    "@types/react-dom": "19.1",
+    "drizzle-kit": "^0.31.10",
+    "tailwindcss": "^4.1.18",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}
