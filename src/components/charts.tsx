@@ -1,6 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+/** Draw at the container's real pixel width so text stays 11px on a phone instead of scaling down. */
+function useWidth(fallback = 640) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [w, setW] = useState(fallback);
+  useEffect(() => {
+    if (!ref.current) return;
+    const ro = new ResizeObserver(([e]) => setW(Math.max(Math.round(e.contentRect.width), 280)));
+    ro.observe(ref.current);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, w] as const;
+}
 
 import { SERIES } from "./palette";
 
@@ -29,8 +42,8 @@ export function RateLines({
   yMax?: number;
 }) {
   const [hover, setHover] = useState<number | null>(null);
-  const W = 640;
-  const pad = { l: 44, r: 96, t: 12, b: 28 };
+  const [box, W] = useWidth();
+  const pad = { l: 40, r: W < 480 ? 84 : 96, t: 12, b: 28 };
   const allY = series.flatMap((s) => s.points.map((p) => p.y ?? 0)).concat(refLines.map((r) => r.y));
   const yMax = yMaxIn ?? Math.max(0.3, Math.ceil((Math.max(...allY) * 1.15) / 0.05) * 0.05);
   const n = xLabels.length;
@@ -49,8 +62,8 @@ export function RateLines({
   const ticks = Array.from({ length: Math.round(yMax / 0.1) + 1 }, (_, i) => i * 0.1).filter((t) => t <= yMax + 1e-9);
 
   return (
-    <div className="relative">
-      <svg viewBox={`0 0 ${W} ${height}`} className="w-full" role="img" aria-label="Roll rate by month" onMouseLeave={() => setHover(null)}>
+    <div className="relative" ref={box}>
+      <svg viewBox={`0 0 ${W} ${height}`} width={W} height={height} className="block max-w-full" role="img" aria-label="Roll rate by month" onMouseLeave={() => setHover(null)}>
         {ticks.map((t) => (
           <g key={t}>
             <line x1={pad.l} x2={W - pad.r} y1={y(t)} y2={y(t)} stroke={GRID} />
@@ -169,7 +182,7 @@ export function RateBar({ value, target, max = 0.4, color }: { value: number | n
 /** Calibration: for each score band, what the model predicted vs what actually happened. */
 export function CalibrationBars({ bands }: { bands: { band: string; n: number; predicted: number; actual: number }[] }) {
   const [hover, setHover] = useState<number | null>(null);
-  const W = 640;
+  const [box, W] = useWidth();
   const H = 200;
   const pad = { l: 44, r: 8, t: 10, b: 28 };
   const yMax = 1;
@@ -178,8 +191,8 @@ export function CalibrationBars({ bands }: { bands: { band: string; n: number; p
   const y = (v: number) => pad.t + (1 - v / yMax) * (H - pad.t - pad.b);
   const colors = [SERIES[0], SERIES[1]];
   return (
-    <div className="relative">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Predicted versus actual roll rate by score band" onMouseLeave={() => setHover(null)}>
+    <div className="relative" ref={box}>
+      <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="block max-w-full" role="img" aria-label="Predicted versus actual roll rate by score band" onMouseLeave={() => setHover(null)}>
         {[0, 0.25, 0.5, 0.75, 1].map((t) => (
           <g key={t}>
             <line x1={pad.l} x2={W - pad.r} y1={y(t)} y2={y(t)} stroke={GRID} />
