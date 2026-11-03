@@ -40,6 +40,7 @@ export const SIGNS: Partial<Record<FeatureName, 1 | -1>> = {
   notReachable14d: 1,
   openDispute: 1,
   hasActivePromise: -1,
+  monthsOnBook: -1,
 };
 
 /**

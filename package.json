@@ -11,9 +11,10 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
-    "setup": "npm run db:migrate && npm run db:seed",
+    "setup": "npm run db:reset-local && npm run db:migrate && npm run db:seed",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:reset-local": "node -e \"require('fs').rmSync('.data/pglite',{recursive:true,force:true})\""
   },
   "engines": {
     "node": ">=20"

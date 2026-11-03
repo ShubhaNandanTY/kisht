@@ -27,7 +27,7 @@ async function insertChunks<T>(table: Parameters<typeof db.insert>[0], rows: T[]
 }
 
 async function main() {
-  const today = process.env.SEED_TODAY ?? istDate(new Date());
+  const today = process.env.SEED_TODAY || istDate(new Date());
   const nowMs = process.env.SEED_TODAY ? istInstant(today, 17, 30).getTime() : Date.now();
   const t0 = Date.now();
   console.log(`Seeding demo data as of ${today} ...`);
@@ -112,7 +112,7 @@ async function main() {
   await insertChunks(s.snapshots, scoredSnapshots, 1000);
   await insertChunks(
     s.outcomes,
-    sim.outcomes.map((o) => ({ ...o, lateEntry: false })),
+    sim.outcomes.map((o) => ({ ...o, lateEntry: o.flags.includes("late_entry") })),
   );
   await insertChunks(
     s.promises,

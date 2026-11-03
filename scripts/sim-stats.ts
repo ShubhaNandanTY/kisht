@@ -4,7 +4,7 @@ import { rollRates, trailingRollRate } from "../src/domain/rollRate";
 import { trainWithBacktest } from "../src/server/training";
 import { istDate } from "../src/domain/time";
 
-const today = process.env.SEED_TODAY ?? istDate(new Date());
+const today = process.env.SEED_TODAY || istDate(new Date());
 const t0 = Date.now();
 const sim = simulate(today);
 console.log(`simulated in ${Date.now() - t0}ms: loans ${sim.loans.length}, snapshots ${sim.snapshots.length}, outcomes ${sim.outcomes.length}, promises ${sim.promises.length}, attempts ${sim.attempts.length}`);

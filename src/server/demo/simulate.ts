@@ -80,7 +80,7 @@ export type SimPromise = {
   outcomeId: string;
   promisedDate: string;
   amount: number;
-  status: "open" | "kept" | "broken";
+  status: "open" | "kept" | "broken" | "superseded";
   createdAt: Date;
   resolvedAt: Date | null;
   willKeep: boolean;
@@ -119,7 +119,7 @@ function mulberry32(seed: number) {
 const sigmoid = (z: number) => 1 / (1 + Math.exp(-z));
 
 export function simulate(today: string, opts: { nowMs?: number; seed?: number } = {}): SimResult {
-  const rand = mulberry32(opts.seed ?? 20261103);
+  const rand = mulberry32(opts.seed ?? 36);
   const normal = () => Math.sqrt(-2 * Math.log(rand() + 1e-12)) * Math.cos(2 * Math.PI * rand());
   const pick = <T,>(arr: readonly T[]) => arr[Math.floor(rand() * arr.length)];
   let uuidCounter = 0;
@@ -262,10 +262,14 @@ export function simulate(today: string, opts: { nowMs?: number; seed?: number } 
     if (occurredAt.getTime() > nowMs - 5 * 60_000) return null; // never invent the future
     const offlineDelay = rand() < 0.25 ? (30 + rand() * 300) * 60_000 : rand() * 120_000;
     const gps = gpsFor(loan);
-    const receivedAt = new Date(Math.min(occurredAt.getTime() + offlineDelay, nowMs));
     const flags: string[] = [];
     if (gps.distanceM !== null && gps.distanceM > 500) flags.push("far_from_borrower");
-    if (receivedAt.getTime() - occurredAt.getTime() > 3_600_000) flags.push("synced_late");
+    // Most visits are logged on the spot; some are typed in the next morning.
+    const nextDay = rand() < 0.07 && occurredAt.getTime() + 86_400_000 < nowMs;
+    const capturedAt = nextDay ? istInstant(addDays(day, 1), 9, Math.floor(rand() * 50)) : new Date(occurredAt.getTime() + 20_000);
+    if (nextDay) flags.push("logged_next_day", "late_entry");
+    const receivedAt = new Date(Math.min(capturedAt.getTime() + offlineDelay, nowMs));
+    if (receivedAt.getTime() - capturedAt.getTime() > 3_600_000) flags.push("synced_late");
     const o: SimOutcome = {
       id: uuid(),
       loanId: loan.id,
@@ -273,7 +277,7 @@ export function simulate(today: string, opts: { nowMs?: number; seed?: number } 
       type,
       amount,
       occurredAt,
-      capturedAt: new Date(occurredAt.getTime() + 20_000),
+      capturedAt,
       receivedAt,
       ...gps,
       flags,
@@ -344,6 +348,11 @@ export function simulate(today: string, opts: { nowMs?: number; seed?: number } 
       if (loan.dpd > 90) {
         loan.npa = true; // hands over to the legal/recovery team: out of the field app
         loan.overdue = false;
+        if (loan.activePromiseId) {
+          const p = promiseById.get(loan.activePromiseId)!;
+          if (p.status === "open") resolvePromise(p, "broken", day);
+          loan.activePromiseId = null;
+        }
         if (loan.officerId) officerLoad.set(loan.officerId, officerLoad.get(loan.officerId)! - 1);
         continue;
       }
@@ -421,6 +430,11 @@ export function simulate(today: string, opts: { nowMs?: number; seed?: number } 
   }
 
   function makePromise(loan: SimLoan, o: SimOutcome, day: string) {
+    const previous = loan.activePromiseId ? promiseById.get(loan.activePromiseId) : null;
+    if (previous?.status === "open") {
+      previous.status = "superseded"; // a new promise replaces the old one, as in the app
+      previous.resolvedAt = o.capturedAt;
+    }
     const broken = brokenCount.get(loan.id) ?? 0;
     const p: SimPromise = {
       id: uuid(),

@@ -36,7 +36,7 @@ export async function latestImportDate(db: DB): Promise<string | null> {
  */
 export async function importOverdueFile(
   db: DB,
-  input: { csv: string; fileName: string; asOfDate: string; userId: string | null; now: Date },
+  input: { csv: string; fileName: string; asOfDate: string; userId: string | null; now: Date; allowPartial?: boolean },
 ): Promise<ImportSummary> {
   const latest = await latestImportDate(db);
   if (latest && input.asOfDate < latest) return { ok: false, error: "older_than_latest" };
@@ -45,6 +45,13 @@ export async function importOverdueFile(
   const parsed = parseOverdueCsv(input.csv, { asOfDate: input.asOfDate, branchCodes: branchRows.map((b) => b.id) });
   if (parsed.fatal) return { ok: false, error: parsed.fatal };
   if (!parsed.rows.length) return { ok: false, error: "no_valid_rows", errors: parsed.errors.slice(0, 200) };
+
+  // Loans missing from the file are treated as paid up, so a truncated export would wipe
+  // every officer's list. Refuse a file that covers under half of today's book unless confirmed.
+  const [{ n: liveNow }] = await db.select({ n: sql<number>`count(*)::int` }).from(loans).where(eq(loans.status, "overdue"));
+  if (!input.allowPartial && liveNow >= 20 && parsed.rows.length < liveNow * 0.5) {
+    return { ok: false, error: `partial_file:${parsed.rows.length}:${liveNow}`, errors: parsed.errors.slice(0, 200) };
+  }
 
   const fileIds = parsed.rows.map((r) => r.loan_id);
   const existing = await db.select({ id: loans.id, status: loans.status }).from(loans).where(inArray(loans.id, fileIds));

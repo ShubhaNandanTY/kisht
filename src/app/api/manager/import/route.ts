@@ -29,9 +29,10 @@ export const POST = route(async (req: Request) => {
   const form = await req.formData();
   const file = form.get("file");
   const asOfDate = String(form.get("asOfDate") ?? today);
+  const allowPartial = form.get("allowPartial") === "true";
   if (!(file instanceof File)) return json({ error: "no_file" }, 400);
   if (file.size > MAX_BYTES) return json({ error: "file_too_large" }, 413);
   if (!/\.csv$/i.test(file.name)) return json({ error: "not_csv" }, 400);
   if (!isIsoDate(asOfDate) || asOfDate > today) return json({ error: "bad_date" }, 400);
-  return json(await importOverdueFile(db, { csv: await file.text(), fileName: file.name, asOfDate, userId: s.sub, now }));
+  return json(await importOverdueFile(db, { csv: await file.text(), fileName: file.name, asOfDate, userId: s.sub, now, allowPartial }));
 });

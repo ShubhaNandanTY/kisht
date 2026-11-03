@@ -1,0 +1,8 @@
+loan_id,borrower_name,business_type,phone,address,pincode,branch_code,outstanding,overdue_amount,dpd,emi_amount,last_payment_date,last_payment_amount,missed_emis_12m,months_on_book,language,lat,lng
+LN-10293,Company B,Packaging unit,90000 10293,"Shop 93, Sanwer Road Industrial Area, Indore 452015",452015,SNR,640000,29000,12,29000,2026-09-22,29000,1,26,hi,22.7643,75.8541
+LN-10871,Company C,Fertiliser shop,9000010871,"Shop 71, Pithampur Sector 1, Indore 454775",454775,PTM,310000,13000,27,13000,2026-09-07,13000,3,18,hi,22.6106,75.6838
+LN-11930,Company D,Printing press,+91 9000011930,"Shop 30, Siyaganj, Indore 452007",452007,SYG,220000,9500,19,9500,2026-09-15,9500,2,30,en,22.7279,75.8635
+LN-55501,Demo Row Bad Phone,Hardware store,12345,"Shop 1, Rajwada, Indore 452002",452002,SYG,150000,7000,5,7000,,,0,12,hi,,
+LN-55502,Demo Row Unknown Branch,Hardware store,9000055502,"Shop 2, Rajwada, Indore 452002",452002,XYZ,150000,7000,5,7000,,,0,12,hi,,
+LN-55503,Demo Row Overdue Too High,Kirana wholesaler,9000055503,"Shop 3, Siyaganj, Indore 452007",452007,SYG,50000,90000,8,6000,,,1,20,hi,,
+LN-10293,Company B duplicate,Packaging unit,9000010293,"Shop 93, Sanwer Road",452015,SNR,640000,29000,12,29000,,,1,26,hi,,

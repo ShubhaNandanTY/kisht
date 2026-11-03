@@ -75,7 +75,7 @@ const rowSchema = z
     lat: optionalNumber(z.number().min(-90).max(90)),
     lng: optionalNumber(z.number().min(-180).max(180)),
   })
-  .refine((r) => r.overdue_amount <= r.outstanding, { message: "overdue_amount is more than outstanding", path: ["overdue_amount"] });
+  .refine((r) => r.overdue_amount <= r.outstanding, { message: "is more than outstanding", path: ["overdue_amount"] });
 
 export type OverdueRow = z.infer<typeof rowSchema>;
 export type RowError = { row: number; loanId?: string; message: string };

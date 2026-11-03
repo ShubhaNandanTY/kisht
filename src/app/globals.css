@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), var(--font-deva), ui-sans-serif, system-ui, sans-serif;
+  --color-ink: #101828;
+  --color-muted: #5d6675;
+  --color-faint: #98a1ae;
+  --color-line: #e7e9ee;
+  --color-surface: #f6f7f9;
+  --color-accent: #0e6b4f;
+  --color-accent-strong: #0a5540;
+  --color-accent-soft: #e6f2ed;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdeeec;
+  --color-warn: #93590a;
+  --color-warn-soft: #fdf3e2;
+  --color-info: #2852a8;
+  --color-info-soft: #eaf0fb;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  background: #fff;
+  color: var(--color-ink);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-feature-settings: "tnum" 1;
+}
+
+/* Devanagari needs more line height than Latin to keep matras from clipping. */
+:lang(hi) {
+  line-height: 1.6;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes sheet-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-sheet { animation: sheet-in 180ms ease-out; }
+.animate-fade { animation: fade-in 150ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet, .animate-fade { animation: none; }
+}

@@ -20,6 +20,12 @@ function create(): DB {
   const dir = process.env.PGLITE_DIR ?? path.join(process.cwd(), ".data", "pglite");
   fs.mkdirSync(dir, { recursive: true });
   const client = new PGlite(dir);
+  // PGlite writes to local files; closing it on Ctrl-C keeps them consistent.
+  for (const sig of ["SIGINT", "SIGTERM"] as const) {
+    process.once(sig, () => {
+      client.close().finally(() => process.exit(0));
+    });
+  }
   return drizzlePglite(client, { schema }) as unknown as DB;
 }
 
