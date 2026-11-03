@@ -1,7 +1,7 @@
 # Kisht: deployment and running guide
 
 Repository: https://github.com/ShubhaNandanTY/kisht
-Live demo: LIVE_URL_PENDING
+Live demo: https://kisht-alpha.vercel.app
 
 ## 1. Run it locally
 

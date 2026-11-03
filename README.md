@@ -2,6 +2,7 @@
 
 Field collections for an NBFC: each morning's overdue file becomes a prioritised, explained list on every field officer's phone (Hindi first, works offline), outcomes are logged in three taps with GPS, borrower contact is blocked outside 8 am–7 pm and every attempt recorded, promises to pay are tracked with reminders, and managers see roll rates by branch the same day.
 
+- **Live demo:** https://kisht-alpha.vercel.app (password `kisht-demo-2026`, accounts listed on the sign-in page)
 - **Design document:** [docs/TDD.pdf](docs/TDD.pdf)
 - **Run, deploy, demo logins:** [deployment.md](deployment.md)
 
