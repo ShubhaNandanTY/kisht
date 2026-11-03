@@ -19,6 +19,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0",
     "@electric-sql/pglite": "^0.3.16",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.44.7",
