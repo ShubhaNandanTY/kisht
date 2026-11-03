@@ -13,8 +13,6 @@ import { importOverdueFile, latestImportDate, settlePromises } from "./imports";
 import { ApiError } from "./auth";
 import type { Session } from "@/lib/sessionToken";
 
-const BORROWER_TEMPLATES: TemplateId[] = ["overdue_gentle", "ptp_day_before", "ptp_due_today", "broken_followup"];
-
 type Loan = typeof loans.$inferSelect;
 
 async function loanForOfficer(db: DB, session: Session, loanId: string): Promise<Loan> {
@@ -25,14 +23,25 @@ async function loanForOfficer(db: DB, session: Session, loanId: string): Promise
   return loan;
 }
 
-async function varsFor(db: DB, loan: Loan, today: string): Promise<{ template: TemplateId; vars: TemplateVars }> {
-  const [p] = await db.select().from(promises).where(eq(promises.loanId, loan.id)).orderBy(desc(promises.createdAt)).limit(1);
+/**
+ * Which templates are true for this loan today. A "due tomorrow" message for a promise due today
+ * would state a wrong date to the borrower, so each promise template is only offered when it fits.
+ */
+async function templatesFor(db: DB, loan: Loan, today: string): Promise<{ id: TemplateId; vars: TemplateVars }[]> {
+  const [p] = await db
+    .select()
+    .from(promises)
+    .where(and(eq(promises.loanId, loan.id), inArray(promises.status, ["open", "broken", "kept"])))
+    .orderBy(desc(promises.createdAt))
+    .limit(1);
   const branchPhone = BRANCHES.find((b) => b.id === loan.branchId)?.phone ?? "";
   const base = { name: loan.borrowerName, loanId: loan.id, branchPhone };
-  if (p?.status === "open" && p.promisedDate === addDays(today, 1)) return { template: "ptp_day_before", vars: { ...base, amount: p.amount, date: p.promisedDate } };
-  if (p?.status === "open" && p.promisedDate === today) return { template: "ptp_due_today", vars: { ...base, amount: p.amount, date: p.promisedDate } };
-  if (p?.status === "broken" && p.promisedDate >= addDays(today, -14)) return { template: "broken_followup", vars: { ...base, amount: p.amount, date: p.promisedDate } };
-  return { template: "overdue_gentle", vars: { ...base, amount: loan.overdueAmount } };
+  const out: { id: TemplateId; vars: TemplateVars }[] = [];
+  if (p?.status === "open" && p.promisedDate === addDays(today, 1)) out.push({ id: "ptp_day_before", vars: { ...base, amount: p.amount, date: p.promisedDate } });
+  if (p?.status === "open" && p.promisedDate === today) out.push({ id: "ptp_due_today", vars: { ...base, amount: p.amount, date: p.promisedDate } });
+  if (p?.status === "broken" && p.promisedDate >= addDays(today, -14)) out.push({ id: "broken_followup", vars: { ...base, amount: p.amount, date: p.promisedDate } });
+  out.push({ id: "overdue_gentle", vars: { ...base, amount: loan.overdueAmount } });
+  return out;
 }
 
 function sign(loanId: string, templateId: string, body: string): string {
@@ -42,6 +51,7 @@ function sign(loanId: string, templateId: string, body: string): string {
 
 export type Draft = {
   templateId: TemplateId;
+  options: TemplateId[];
   language: "hi" | "en";
   template: { body: string; token: string };
   ai: { body: string; token: string } | null;
@@ -58,13 +68,20 @@ export type Draft = {
 export async function draftReminder(db: DB, session: Session, loanId: string, now: Date, requested?: TemplateId): Promise<Draft> {
   const loan = await loanForOfficer(db, session, loanId);
   const today = istDate(now);
-  const suggested = await varsFor(db, loan, today);
-  const templateId = requested && BORROWER_TEMPLATES.includes(requested) ? requested : suggested.template;
-  const vars = templateId === suggested.template ? suggested.vars : { ...suggested.vars, date: templateId === "overdue_gentle" ? undefined : suggested.vars.date };
-  if (templateId !== "overdue_gentle" && !vars.date) throw new ApiError(400, "no_promise_for_template");
+  const options = await templatesFor(db, loan, today);
+  const chosen = (requested && options.find((o) => o.id === requested)) || options[0];
+  if (requested && chosen.id !== requested) throw new ApiError(400, "template_not_applicable");
+  const { id: templateId, vars } = chosen;
   const lang = loan.language;
   const body = fillTemplate(templateId, lang, vars);
-  const draft: Draft = { templateId, language: lang, template: { body, token: sign(loan.id, templateId, body) }, ai: null, aiStatus: "off" };
+  const draft: Draft = {
+    templateId,
+    options: options.map((o) => o.id),
+    language: lang,
+    template: { body, token: sign(loan.id, templateId, body) },
+    ai: null,
+    aiStatus: "off",
+  };
 
   if (!process.env.ANTHROPIC_API_KEY) return draft;
   try {

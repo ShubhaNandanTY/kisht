@@ -45,13 +45,8 @@ export function ReminderSheet({
       .catch(() => setState(navigator.onLine ? "error" : "offline"));
   }, [open, loan.id, type]);
 
-  // Only offer promise templates when there is a promise to refer to.
-  const available = TYPES.filter((x) => {
-    if (x === "overdue_gentle") return true;
-    if (!loan.promise) return false;
-    if (x === "broken_followup") return loan.promise.status === "broken";
-    return loan.promise.status === "open";
-  });
+  // The server says which templates are true for this loan today.
+  const available = TYPES.filter((x) => draft?.options.includes(x));
 
   const chosen = draft && (use === "ai" && draft.ai ? draft.ai : draft.template);
   const win = checkContactWindow(clientNow());

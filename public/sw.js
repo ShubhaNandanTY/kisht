@@ -1,6 +1,6 @@
 // Kisht service worker: keeps the officer app shell available with no signal.
 // Data (the day's list and queued outcomes) lives in IndexedDB, not here; API calls are never cached.
-const CACHE = "kisht-shell-v1";
+const CACHE = "kisht-shell-v2";
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => {
@@ -41,4 +41,22 @@ self.addEventListener("fetch", (event) => {
         .catch(() => caches.match("/officer").then((hit) => hit || Response.error())),
     );
   }
+});
+
+// The page tells us which files it was built from on first load (before this worker controlled it),
+// so the app works offline even if the signal drops straight after sign-in.
+self.addEventListener("message", (event) => {
+  if (event.data?.type !== "precache" || !Array.isArray(event.data.urls)) return;
+  const urls = event.data.urls.filter((u) => typeof u === "string" && u.startsWith("/"));
+  event.waitUntil(
+    caches.open(CACHE).then((c) =>
+      Promise.all(
+        urls.map((u) =>
+          fetch(u, { credentials: "same-origin" })
+            .then((res) => (res.ok && !res.redirected ? c.put(u, res) : undefined))
+            .catch(() => undefined),
+        ),
+      ),
+    ),
+  );
 });

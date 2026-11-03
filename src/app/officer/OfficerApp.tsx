@@ -99,7 +99,19 @@ export function OfficerApp({ officerId, demo }: { officerId: string; demo: boole
         await fetchToday();
       });
     })();
-    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") navigator.serviceWorker.register("/sw.js").catch(() => {});
+    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then(() => navigator.serviceWorker.ready)
+        .then((reg) => {
+          const assets = performance
+            .getEntriesByType("resource")
+            .map((e) => new URL(e.name).pathname)
+            .filter((p) => p.startsWith("/_next/static/"));
+          reg.active?.postMessage({ type: "precache", urls: ["/officer", ...new Set(assets)] });
+        })
+        .catch(() => {});
+    }
   }, [officerId, fetchToday, reloadOutbox]);
 
   useEffect(() => subscribe(setSync), []);
@@ -170,7 +182,8 @@ export function OfficerApp({ officerId, demo }: { officerId: string; demo: boole
   async function onSaveOutcome(e: OutcomeEvent) {
     await queue(e);
     setSheet(null);
-    setToast({ msg: navigator.onLine ? t("outcome.saved") : t("outcome.savedOffline"), tone: "neutral" });
+    const synced = navigator.onLine && sync.phase !== "error" && sync.phase !== "offline";
+    setToast({ msg: synced ? t("outcome.saved") : t("outcome.savedOffline"), tone: "neutral" });
   }
 
   async function signOut() {
