@@ -1,5 +1,5 @@
 // Skeleton while a manager page loads its data on the server.
-export default function Loading() {
+export function ManagerSkeleton() {
   return (
     <div className="animate-pulse" aria-busy="true" aria-label="Loading">
       <div className="h-7 w-48 rounded-lg bg-line" />
