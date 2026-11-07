@@ -255,6 +255,8 @@ export function OfficerApp({ officerId, demo }: { officerId: string; demo: boole
 
   const todo = view.loans.filter((l) => !l.visitedToday);
   const done = view.loans.filter((l) => l.visitedToday);
+  // Officer reminder: promises due today that have not been visited yet today.
+  const dueToday = view.promises.filter((p) => p.status === "open" && p.promisedDate === today && !done.some((l) => l.id === p.loanId));
   const promisedToday = view.promises.filter((p) => p.status === "open" && p.promisedDate === today).length;
   const broken = view.promises.filter((p) => p.status === "broken").length;
   // Today's work so far: what the server has, plus anything still waiting in the outbox.
@@ -301,6 +303,22 @@ export function OfficerApp({ officerId, demo }: { officerId: string; demo: boole
 
           {tab === "today" && (
             <>
+              {dueToday.length > 0 && (
+                <section className="mx-5 mt-5 rounded-2xl border border-info/20 bg-info-soft px-4 py-3" role="status">
+                  <p className="text-sm font-semibold text-info">{t("officer.reminder.title", { n: dueToday.length })}</p>
+                  <ul className="mt-1.5 space-y-1">
+                    {dueToday.map((p) => (
+                      <li key={p.loanId}>
+                        <button onClick={() => open(p.loanId)} className="flex w-full items-baseline justify-between gap-3 py-0.5 text-left text-sm">
+                          <span className="truncate">{p.borrowerName}</span>
+                          <span className="num shrink-0 font-medium">{inr(p.amount)}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-1.5 text-xs text-info/80">{t("officer.reminder.body")}</p>
+                </section>
+              )}
               {view.loans.length > 0 && (
                 <section className="mx-5 mt-5 rounded-2xl bg-surface px-4 py-3.5" aria-label={t("officer.progress", { done: done.length, total: view.loans.length })}>
                   <div className="flex items-baseline justify-between gap-3">

@@ -19,6 +19,7 @@ export const POST = route(async (req: Request) => {
   const { email, password } = body.parse(await req.json());
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
   const key = `${email}|${ip}`;
+  if (failures.size > 5000) for (const [k, v] of failures) if (v.until < Date.now()) failures.delete(k);
   const f = failures.get(key);
   if (f && f.n >= 5 && f.until > Date.now()) return json({ error: "throttled" }, 429);
 

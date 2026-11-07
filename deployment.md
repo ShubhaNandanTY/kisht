@@ -79,11 +79,11 @@ Names only; never commit values.
 
 All demo accounts use the password **`kisht-demo-2026`**. On the sign-in page, tap an account to sign in directly.
 
-| Role | Name | Email | Use it to see |
+| Role | Name | Email | Use it to see (as of the day the demo data was seeded or reset) |
 |---|---|---|---|
-| Field officer, Sanwer Road | Rahul Chouhan | `rahul@kisht.demo` | Company B (LN-10293) with its promise for the 5th |
+| Field officer, Sanwer Road | Rahul Chouhan | `rahul@kisht.demo` | Company B (LN-10293), 12 DPD, promise due in 2 days |
 | Field officer, Pithampur | Neha Solanki | `neha@kisht.demo` | Company C (LN-10871), 27 DPD, 4 days from rolling |
-| Field officer, Siyaganj | Imran Qureshi | `imran@kisht.demo` | Company D (LN-11930) with its broken promise of the 31st |
+| Field officer, Siyaganj | Imran Qureshi | `imran@kisht.demo` | Company D (LN-11930), 19 DPD, promise broken 3 days ago |
 | Branch manager, Sanwer Road | Priya Saxena | `priya@kisht.demo` | One branch only |
 | Branch manager, Siyaganj | Anil Mehta | `anil@kisht.demo` | One branch only |
 | Branch manager, Pithampur | Rakesh Dubey | `rakesh@kisht.demo` | One branch only |

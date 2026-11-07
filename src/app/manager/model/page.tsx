@@ -45,7 +45,7 @@ export default async function ModelPage({ searchParams }: { searchParams: Promis
         <Stat
           label="Active model"
           value={active ? (active.params.kind === "rules" ? "Rules" : "Logistic") : "Rules"}
-          sub={active ? <>Trained {day(active.trainedAt.toISOString().slice(0, 10), "en")} on {active.params.trainedOn?.n ?? 0} loan-days to {active.params.trainedOn?.to}</> : "No trained model: starting rules in use, marked low confidence"}
+          sub={active ? <>Trained {day(active.trainedAt.toISOString().slice(0, 10), "en")} on {active.params.trainedOn?.n ?? 0} loan-days up to {active.params.trainedOn?.to ? day(active.params.trainedOn.to, "en") : "–"}</> : "No trained model: starting rules in use, marked low confidence"}
         />
       </div>
 
