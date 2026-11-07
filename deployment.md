@@ -5,34 +5,39 @@ Live demo: https://kisht-alpha.vercel.app
 
 ## 1. Run it locally
 
-Nothing to install apart from Node. Locally the app uses an embedded Postgres (PGlite, stored in `.data/`), so there is no database server to set up.
+Nothing to install apart from Node.js 20 or newer. Locally the app uses an embedded Postgres (PGlite, stored in `.data/`), so there is no database server to set up, and the first run creates everything itself.
 
-Requirements: Node.js 20 or newer, npm.
+**One command, production build (recommended for reviewing):**
 
 ```bash
 git clone https://github.com/ShubhaNandanTY/kisht.git
 cd kisht
 npm install
-cp .env.example .env.local       # DEMO_MODE=true is already set
-npm run setup                    # creates the local database, runs migrations, loads demo data (about 2 s)
-npm run dev                      # http://localhost:3000
+npm run demo          # creates .env.local and the database, builds, starts on http://localhost:3000
 ```
 
-Open http://localhost:3000 and pick a demo account on the sign-in page.
+**Or the development server (hot reload):**
 
-To try it on a phone on the same Wi-Fi, open `http://<your-computer-ip>:3000`. GPS and the offline cache need HTTPS on a real phone, so use the deployed version for that (or a tunnel such as `npx localtunnel --port 3000`).
+```bash
+npm install
+npm run dev           # first run also creates .env.local and the database (about 5 s)
+```
+
+Open http://localhost:3000 and tap a demo account on the sign-in page. Officer screens are designed for a phone: on a computer, use the browser's device mode (or narrow the window). Use another port with `PORT=3100 npm run demo`.
+
+To try it on a phone on the same Wi-Fi, open `http://<your-computer-ip>:3000`. GPS and the offline cache need HTTPS on a real phone, so use the live site for that (or a tunnel such as `npx localtunnel --port 3000`).
 
 Other commands:
 
 | Command | What it does |
 |---|---|
-| `npm test` | 69 unit and integration tests (Vitest; integration tests run against an in-memory Postgres) |
+| `npm test` | 70 unit and integration tests (Vitest; integration tests run against an in-memory Postgres) |
 | `npm run typecheck` | TypeScript check |
-| `npm run build && npm start` | Production build. Needs `SESSION_SECRET` in `.env.local`. The offline service worker only runs in this mode |
-| `npm run setup` | Rebuilds the local database from scratch and reloads demo data. **Stop the dev server first**: the embedded database allows one process at a time |
+| `npm run setup` | Rebuilds the local database from scratch and reloads demo data as of today. **Stop the server first**: the embedded database allows one process at a time. (Or use **Reset demo data** in the app, signed in as the head of collections.) |
+| `npm run build && npm start` | Production build without the demo helper. Needs `SESSION_SECRET` in `.env.local` (`npm run demo` adds one) |
 | `npx tsx scripts/sim-stats.ts` | Prints the demo simulation's headline numbers and model metrics without touching the database |
 
-The demo data is anchored on the day you run `setup`: it simulates the 150 days before today, so the three loans from the brief always show their stated DPD and promise dates relative to today. Override with `SEED_TODAY=2026-11-03 npm run db:seed`.
+The demo data is anchored on the day it is seeded: it simulates the 150 days before that day, so the three loans from the brief show their stated DPD and promise dates relative to it. Override with `SEED_TODAY=2026-11-03 npm run db:seed`.
 
 ## 2. How it is deployed
 
@@ -40,6 +45,7 @@ The demo data is anchored on the day you run `setup`: it simulates the 150 days 
 - **Database:** Neon Postgres (free plan) in Singapore, added through the Vercel Marketplace, connected through `DATABASE_URL`. Same schema and migrations as local. The Marketplace does not offer an India region; for the client's rollout the database would be Neon or RDS in AWS Mumbai (`ap-south-1`) with functions in `bom1`; only `DATABASE_URL` and `vercel.json` change.
 - **Migrations:** run automatically on every deploy (`vercel-build` = `tsx scripts/migrate.ts && next build`).
 - **Scheduled job:** Vercel Cron calls `GET /api/cron/daily` at 03:30 UTC (9:00 am IST): imports the day's file if it has not been imported yet, settles promises, sends promise reminders. Configured in `vercel.json`.
+- **Keeping the live demo current:** the 9 am job imports a new daily file every morning, so lists keep ageing like a real book. To put the brief's three loans back exactly as described, sign in as the head of collections and use **Reset demo data** in the sidebar (only shown when `DEMO_MODE=true`; takes a few seconds).
 - **Seeding the deployed database (once):** run the seed from your machine against the production database:
 
   ```bash
@@ -89,9 +95,11 @@ Other officers: `sunita`, `vikram`, `deepak`, `kavita`, `mohit`, `farhan`, `ajay
 
 1. **Officer, phone width.** Sign in as Rahul. The list is in Hindi (EN toggle at top). Open Company B, then log an outcome: Log outcome, then Promise, then Save (three taps; date and amount are prefilled).
 2. **Contact rule.** In the ⋯ menu choose Demo clock, 7:30 pm. The header turns red; tapping Call explains the RBI rule and records the blocked attempt. Logging an outcome now asks when the contact happened (8 am to 7 pm only). Set the clock back to Real time afterwards.
-3. **Offline.** In a production build (`npm run build && npm start`) or the live site, load the officer app, switch the phone or browser to offline, log a visit (it shows "Saved on phone" and a pending count), then go back online: it syncs by itself.
+3. **Offline.** In a production build (`npm run demo`) or the live site, load the officer app, switch the phone or browser to offline, log a visit (it shows "Saved on phone" and a pending count), then go back online: it syncs by itself.
 4. **Reminder.** Open a borrower and tap Reminder: the approved template for that loan's situation, in the borrower's language. Outside 8 am to 7 pm the send is blocked and recorded.
-5. **Manager.** Sign in as Meera. Overview shows the roll rate against the 16% target, by branch, with model projections for loans still maturing. Team & lists, then an officer: pin or reorder loans, reassign, see the visit map. Daily import: download the sample file with errors and upload it to see row-level validation and the partial-file guard. Priority model: the held-out back-test, calibration and weights.
+5. **Fresh start.** Signed in as Meera, **Reset demo data** (sidebar) rebuilds the demo as of today, so the three sample loans are exactly as in the brief.
+6. **Compliance.** Meera or Priya: **Compliance** lists every contact attempt blocked outside 8 am–7 pm, visits whose GPS or timing needs a second look, and the audit log.
+7. **Manager.** Sign in as Meera. Overview shows the roll rate against the 16% target, by branch, with model projections for loans still maturing. Team & lists, then an officer: pin or reorder loans, reassign, see the visit map. Daily import: download the sample file with errors and upload it to see row-level validation and the partial-file guard. Priority model: the held-out back-test, calibration and weights.
 
 ## 5. Notes
 

@@ -10,7 +10,7 @@ run(["run", "ensure-local"]);
 console.log("› Building (about a minute the first time)…");
 run(["run", "build", "--silent"]);
 console.log(`
-  Kisht is running on http://localhost:3000
+  Kisht is running on http://localhost:${process.env.PORT || 3000}
   Sign in with any demo account (password kisht-demo-2026), e.g.
     Field officer        rahul@kisht.demo
     Branch manager       priya@kisht.demo

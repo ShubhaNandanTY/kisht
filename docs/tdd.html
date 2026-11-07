@@ -49,7 +49,7 @@
   <b>Live app</b><span><a href="https://kisht-alpha.vercel.app">https://kisht-alpha.vercel.app</a> (Vercel, Singapore; seeded with the demo data)</span>
   <b>Demo logins</b><span>Password <code>kisht-demo-2026</code> for all. Officer <code>rahul@kisht.demo</code>, branch manager <code>priya@kisht.demo</code>, head of collections <code>meera@kisht.demo</code>. The sign-in page lists them for one-tap login.</span>
   <b>Author</b><span>Shubhanandan T Y</span>
-  <b>Run locally</b><span><code>npm install &amp;&amp; npm run setup &amp;&amp; npm run dev</code>: no database to install (see deployment.md)</span>
+  <b>Run locally</b><span><code>npm install &amp;&amp; npm run demo</code>: one command creates the config and an embedded database with demo data, builds and starts on localhost:3000. Nothing else to install (see deployment.md).</span>
 </div>
 
 <h2>1. What was built</h2>
@@ -66,6 +66,7 @@
   <tr><td>Hard part: offline logging with sync</td><td>Done. IndexedDB cache and outbox, service worker shell, idempotent sync, server re-validation.</td></tr>
   <tr><td>Hard part: 8 am–7 pm contact block</td><td>Done. Enforced on the phone and on the server, IST regardless of device timezone, every attempt recorded.</td></tr>
   <tr><td>Optional depth from the must-have list</td><td>AI-drafted Hindi/English reminders from approved templates with a word filter; officer activity log with a visit map; broken-promise dashboard.</td></tr>
+  <tr><td>Beyond the brief</td><td>Compliance page (blocked attempts, visits to review, audit log); officer progress card (visited, collected, promises); one-command local run; "Reset demo data" so reviewers always see the brief's scenario as of their day.</td></tr>
 </table>
 
 <h2>2. Assumptions</h2>
@@ -224,18 +225,18 @@
   <tr><td>Access control</td><td>Officers see and log only their branch's loans (drafts and sends only their own assigned loans). Branch managers see only their branch, enforced on the server, not just in the UI. Only the head of collections can retrain.</td></tr>
   <tr><td>Input validation</td><td>zod on every API body and CSV row; file size and type limits; per-event validation in sync batches; the cron endpoint requires a secret (timing-safe compare).</td></tr>
   <tr><td>Secrets</td><td>None in the repository; <code>.env.example</code> lists names only. The demo password is a documented demo value, replaced by <code>SEED_PASSWORD</code>.</td></tr>
-  <tr><td>DPDP Act 2023</td><td>Data minimisation (officers get only their own list); phone numbers masked in the reminder preview; borrower data wiped from the phone on sign-out; an audit log of log-ins, imports, outcome writes, overrides and retrains. All demo data is invented. The demo is hosted in Singapore; DPDP allows transfers outside India unless the government restricts a country, but for the client I would host in AWS Mumbai, as RBI expects for lending data.</td></tr>
+  <tr><td>DPDP Act 2023</td><td>Data minimisation (officers get only their own list); phone numbers masked in the reminder preview; borrower data wiped from the phone on sign-out; an audit log of log-ins, imports, outcome writes, overrides and retrains, readable by managers on the Compliance page (borrower data itself is never written to it). All demo data is invented. The demo is hosted in Singapore; DPDP allows transfers outside India unless the government restricts a country, but for the client I would host in AWS Mumbai, as RBI expects for lending data.</td></tr>
   <tr><td>RBI fair practices</td><td>Contact-hour enforcement on both client and server, an attempt log including blocked attempts, threat-free approved message templates, and no auto-dialler or legal language (out of scope).</td></tr>
 </table>
 
 <h2 class="break">8. UI and design decisions</h2>
 <p>The brief asks for minimal design and one-handed use. Rules used everywhere: one accent colour (deep green), with red and amber only for meaning (risk, broken promises, blocked contact); white space instead of boxes; Inter plus Noto Sans Devanagari with extra line height for Hindi matras; tap targets of at least 44 px (outcome tiles 96 px); everything an officer needs sits in the bottom half of the screen.</p>
 <div class="shots">
-  <figure><img src="screens/02-officer-list.jpg" /><figcaption><b>Today.</b> A short list ordered by score. One reason per row (the one that moved it most), the overdue amount, and a promise chip. Sync and contact-hour status sit at the top.</figcaption></figure>
+  <figure><img src="screens/02-officer-list.jpg" /><figcaption><b>Today.</b> A progress card (visited, promises due, broken), then a short list ordered by score. One reason per row (the one that moved it most), the overdue amount, and a promise chip. Sync and contact-hour status sit at the top.</figcaption></figure>
   <figure><img src="screens/03-loan-detail.jpg" /><figcaption><b>Why this borrower.</b> Score as a plain-language chance, three reasons with ↑/↓ and their weight, a confidence label and an "advisory" note. Facts the officer asks about at the shop.</figcaption></figure>
   <figure><img src="screens/04-log-outcome.jpg" /><figcaption><b>Three taps.</b> A bottom sheet within thumb reach, four large tiles, prefilled date and amount. GPS status is shown but never blocks saving.</figcaption></figure>
   <figure><img src="screens/05-contact-blocked.jpg" /><figcaption><b>Blocked, explained, recorded.</b> After 7 pm a call is not placed; the officer sees the RBI reason and when contact reopens.</figcaption></figure>
-  <figure><img src="screens/01-login.jpg" /><figcaption><b>Sign-in.</b> Language toggle before sign-in; demo accounts (demo mode only) for reviewers.</figcaption></figure>
+  <figure><img src="screens/01-login.jpg" /><figcaption><b>Sign-in on a phone.</b> Language toggle before sign-in; one-tap demo accounts (demo mode only), each saying what it shows.</figcaption></figure>
   <div class="box" style="align-self:start"><b>States.</b> Every screen has loading, empty ("no borrowers on your list"), error with retry, stale ("showing the list saved at 6:25 pm") and offline states. Charts follow a validated colour-blind-safe palette with legends, direct labels and hover tooltips, and draw at the device's real width so text stays legible on phones.</div>
 </div>
 <div class="grid2 wide">
@@ -243,14 +244,16 @@
   <figure><img src="screens/07-officer-list-and-visits.jpg" /><figcaption><b>An officer's day.</b> The list with reasons and pin/reorder/reassign; visits on a map joined to each shop, with flags (far from shop, synced late, late entry).</figcaption></figure>
   <figure><img src="screens/08-model-backtest.jpg" /><figcaption><b>Model.</b> Held-out quality in plain words, predicted versus actual by score band, the weekly back-test, the weights, and how wrong scores are handled.</figcaption></figure>
   <figure><img src="screens/09-import-validation.jpg" /><figcaption><b>Import.</b> Row-level errors with line numbers, and the partial-file guard that stops a truncated export from clearing every list.</figcaption></figure>
+  <figure><img src="screens/11-compliance.jpg" /><figcaption><b>Compliance.</b> Every contact blocked outside 8 am–7 pm with officer, borrower and reason; visits to review (far from shop, late entry, logged next day); the audit log. Framed as "needs a second look", not as proof.</figcaption></figure>
+  <figure><img src="screens/10-sign-in-desktop.jpg" /><figcaption><b>Sign-in on desktop.</b> What the product does in four lines, and a reviewer guide: each demo account says which of the brief's loans or screens it shows.</figcaption></figure>
 </div>
 
 <h2>9. Testing</h2>
-<p><b>69 automated tests</b> (Vitest), run with <code>npm test</code>:</p>
+<p><b>70 automated tests</b> (Vitest), run with <code>npm test</code>:</p>
 <ul>
   <li><b>Unit (54):</b> contact window and IST handling, offline time checks (late sync, late entry, future clock, too old); assignment (territory, balancing, continuity, overflow, capacity); CSV (normalisation, row errors, duplicates, formula stripping, missing columns); promise evaluation (grace day, part payment, cure, officer-reported payment); roll-rate cohorts and projections; feature leakage; AUC; training learning the right directions; reasons and confidence; templates passing their own filter; Hindi and English blocklists; draft checks (amount, date, link, phone, loan ID); sync batch validation.</li>
-  <li><b>Integration (15)</b> on in-memory Postgres with the real migrations: idempotent sync and retry, promise superseding, 7 pm rejection with the attempt recorded, server-side attempt verdicts, far-from-shop flag, branch access, import with assignment, partial-file guard, cures and NPA, no rewinding, signed drafts (tampered text rejected), reminders blocked after 7 pm, other officers' borrowers refused, AI rewrite accepted or rejected (mocked model).</li>
-  <li><b>Manual in the browser:</b> three-tap logging, blocked call, offline logging with the server stopped and automatic sync on recovery, pin/reorder, import errors, at both phone and desktop widths.</li>
+  <li><b>Integration (16)</b> on in-memory Postgres with the real migrations: idempotent sync and retry, promise superseding, 7 pm rejection with the attempt recorded, server-side attempt verdicts, far-from-shop flag, branch access, import with assignment, partial-file guard, cures and NPA, no rewinding, signed drafts (tampered text rejected), reminders blocked after 7 pm, other officers' borrowers refused, AI rewrite accepted or rejected (mocked model), compliance report scoped to the manager's branch.</li>
+  <li><b>Manual in the browser:</b> three-tap logging, blocked call, offline logging with the server stopped and automatic sync on recovery, pin/reorder, import errors, demo reset, at both phone and desktop widths; a fresh clone from GitHub running with only <code>npm install &amp;&amp; npm run demo</code>.</li>
 </ul>
 
 <h2>10. What I cut, and what I would do next</h2>
