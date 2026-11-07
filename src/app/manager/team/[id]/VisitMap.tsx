@@ -40,7 +40,7 @@ export function VisitMap({ visits }: { visits: Visit[] }) {
   if (visits.length === 0) return null;
   return (
     <div>
-      <div ref={el} className="h-64 overflow-hidden rounded-xl border border-line" role="img" aria-label="Map of visit locations" />
+      <div ref={el} className="h-64 overflow-hidden rounded-xl border border-line" role="region" aria-label="Map of visit locations" />
       <p className="mt-2 flex gap-4 text-xs text-muted">
         <span className="flex items-center gap-1.5">
           <span className="inline-block size-2 rounded-full bg-accent" /> At the shop

@@ -73,7 +73,7 @@ export function ImportPanel({ today, latest }: { today: string; latest: string |
       >
         <p className="font-medium">{file ? file.name : "Drop the overdue CSV here"}</p>
         <p className="mt-1 text-sm text-muted">{file ? `${(file.size / 1024).toFixed(0)} KB` : "or"}</p>
-        <input ref={input} type="file" accept=".csv,text/csv" className="sr-only" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+        <input ref={input} type="file" accept=".csv,text/csv" className="sr-only" aria-label="Overdue CSV file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
         <Button size="sm" className="mt-3" onClick={() => input.current?.click()}>
           {file ? "Choose another" : "Choose file"}
         </Button>
@@ -93,7 +93,7 @@ export function ImportPanel({ today, latest }: { today: string; latest: string |
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
         <p className="max-w-md text-sm text-muted">
           Or pull today&apos;s file straight from the loan system (mocked here). Latest file: {latest ?? "none"}.{" "}
-          <a href="/api/manager/import/file" className="text-accent">
+          <a href="/api/manager/import/file" className="text-accent underline underline-offset-2">
             Download it
           </a>{" "}
           to inspect or edit first.

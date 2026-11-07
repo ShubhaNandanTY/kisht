@@ -272,7 +272,7 @@ export function OfficerApp({ officerId, demo }: { officerId: string; demo: boole
   const progress = view.loans.length ? done.length / view.loans.length : 0;
 
   return (
-    <div className="mx-auto min-h-dvh max-w-lg bg-white">
+    <main className="mx-auto min-h-dvh max-w-lg bg-white">
       {loan ? (
         <LoanDetail loan={loan} onBack={back} onCall={onCall} onRemind={() => setSheet("reminder")} onLog={() => setSheet("outcome")} pending={false} />
       ) : (
@@ -280,7 +280,7 @@ export function OfficerApp({ officerId, demo }: { officerId: string; demo: boole
           <header className="px-5 pt-[max(1rem,env(safe-area-inset-top))]">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate text-lg font-semibold">{t("officer.greeting", { name: view.officer.name.split(" ")[0] })}</p>
+                <h1 className="truncate text-lg font-semibold">{t("officer.greeting", { name: view.officer.name.split(" ")[0] })}</h1>
                 <p className="text-sm text-muted">
                   {weekdayDay(today, lang)} · {lang === "hi" ? view.officer.branchNameHi : view.officer.branchName}
                 </p>
@@ -417,7 +417,7 @@ export function OfficerApp({ officerId, demo }: { officerId: string; demo: boole
         </div>
       </Sheet>
       <Toast message={toast?.msg ?? null} tone={toast?.tone} onDone={() => setToast(null)} />
-    </div>
+    </main>
   );
 }
 

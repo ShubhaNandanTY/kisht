@@ -41,7 +41,7 @@ export default async function ImportPage({ searchParams }: { searchParams: Promi
       </div>
 
       <Card title="Recent imports" className="mt-6">
-        <div className="-mx-5 overflow-x-auto">
+        <div className="-mx-5 overflow-x-auto" tabIndex={0} role="region" aria-label="Recent imports">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="text-left text-xs text-muted">

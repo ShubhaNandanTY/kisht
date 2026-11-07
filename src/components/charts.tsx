@@ -18,7 +18,7 @@ function useWidth(fallback = 640) {
 import { SERIES } from "./palette";
 
 const GRID = "#eceef1";
-const AXIS = "#98a1ae";
+const AXIS = "#6f7886";
 
 export type Series = { id: string; label: string; color: string; points: { x: string; y: number | null; projected?: boolean; n?: number }[] };
 
