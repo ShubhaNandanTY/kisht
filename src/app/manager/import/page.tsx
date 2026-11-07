@@ -63,7 +63,7 @@ export default async function ImportPage({ searchParams }: { searchParams: Promi
                   <td className={`num py-2.5 text-right ${h.rowsRejected ? "text-danger" : "text-faint"}`}>{h.rowsRejected}</td>
                   <td className="num py-2.5 text-right">{h.newlyOverdue}</td>
                   <td className="num py-2.5 text-right">{h.cured}</td>
-                  <td className="px-5 py-2.5 text-right text-muted">{h.uploadedBy ? dateTime(h.createdAt.toISOString(), "en") : "Automatic, 7:05 am"}</td>
+                  <td className="px-5 py-2.5 text-right text-muted">{h.uploadedBy ? dateTime(h.createdAt.toISOString(), "en") : `Automatic · ${dateTime(h.createdAt.toISOString(), "en")}`}</td>
                 </tr>
               ))}
             </tbody>

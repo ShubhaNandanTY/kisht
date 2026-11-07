@@ -4,6 +4,7 @@
   "private": true,
   "description": "Field collections app for an NBFC: prioritised daily lists, offline outcome logging, promise tracking and roll-rate reporting.",
   "scripts": {
+    "predev": "node scripts/ensure-local.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -14,7 +15,9 @@
     "setup": "npm run db:reset-local && npm run db:migrate && npm run db:seed",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "db:reset-local": "node -e \"require('fs').rmSync('.data/pglite',{recursive:true,force:true})\""
+    "db:reset-local": "node -e \"require('fs').rmSync('.data/pglite',{recursive:true,force:true})\"",
+    "demo": "node scripts/demo.mjs",
+    "ensure-local": "node scripts/ensure-local.mjs"
   },
   "engines": {
     "node": ">=20"

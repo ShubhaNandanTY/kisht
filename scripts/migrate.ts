@@ -1,3 +1,8 @@
+// Pick up DATABASE_URL etc. from .env.local, as Next.js does (existing env vars win).
+try {
+  process.loadEnvFile(".env.local");
+} catch {}
+
 import { migrate as migratePostgres } from "drizzle-orm/postgres-js/migrator";
 import { migrate as migratePglite } from "drizzle-orm/pglite/migrator";
 import { db } from "../src/db/client";

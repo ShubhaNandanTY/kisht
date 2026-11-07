@@ -257,6 +257,17 @@ export function OfficerApp({ officerId, demo }: { officerId: string; demo: boole
   const done = view.loans.filter((l) => l.visitedToday);
   const promisedToday = view.promises.filter((p) => p.status === "open" && p.promisedDate === today).length;
   const broken = view.promises.filter((p) => p.status === "broken").length;
+  // Today's work so far: what the server has, plus anything still waiting in the outbox.
+  const logged = new Set(view.log.map((l) => l.id));
+  const todaysOutcomes = [
+    ...view.log.filter((l) => l.kind === "outcome").map((l) => ({ type: l.type, amount: l.amount })),
+    ...items
+      .filter((i) => i.status !== "rejected" && !logged.has(i.id) && i.event.kind === "outcome" && istDate(new Date(i.event.occurredAt)) === today)
+      .map((i) => (i.event.kind === "outcome" ? { type: i.event.type, amount: i.event.amount ?? null } : { type: "", amount: null })),
+  ];
+  const collected = todaysOutcomes.filter((o) => o.type === "paid").reduce((sum, o) => sum + (o.amount ?? 0), 0);
+  const promisesTaken = todaysOutcomes.filter((o) => o.type === "promise").length;
+  const progress = view.loans.length ? done.length / view.loans.length : 0;
 
   return (
     <div className="mx-auto min-h-dvh max-w-lg bg-white">
@@ -290,16 +301,23 @@ export function OfficerApp({ officerId, demo }: { officerId: string; demo: boole
 
           {tab === "today" && (
             <>
-              <p className="mt-5 px-5 text-sm text-muted">
-                <span className="font-semibold text-ink">{t("officer.summary", { n: todo.length })}</span>
-                {promisedToday > 0 && <> · {t("officer.summary.promises", { n: promisedToday })}</>}
-                {broken > 0 && (
-                  <>
-                    {" "}
-                    · <span className="text-danger">{t("officer.summary.broken", { n: broken })}</span>
-                  </>
-                )}
-              </p>
+              {view.loans.length > 0 && (
+                <section className="mx-5 mt-5 rounded-2xl bg-surface px-4 py-3.5" aria-label={t("officer.progress", { done: done.length, total: view.loans.length })}>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-sm font-semibold">{t("officer.progress", { done: done.length, total: view.loans.length })}</p>
+                    {collected > 0 && <p className="num text-sm font-medium text-accent">{t("officer.collected", { amount: collected })}</p>}
+                  </div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white" aria-hidden>
+                    <div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${Math.round(progress * 100)}%` }} />
+                  </div>
+                  <p className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
+                    <span>{t("officer.summary", { n: todo.length })}</span>
+                    {promisedToday > 0 && <span className="text-info">{t("officer.summary.promises", { n: promisedToday })}</span>}
+                    {broken > 0 && <span className="text-danger">{t("officer.summary.broken", { n: broken })}</span>}
+                    {promisesTaken > 0 && <span>{t("officer.promisesTaken", { n: promisesTaken })}</span>}
+                  </p>
+                </section>
+              )}
               {view.loans.length === 0 ? (
                 <Empty title={t("officer.empty.title")} body={t("officer.empty.body")} action={<Button onClick={fetchToday}>{t("officer.refresh")}</Button>} />
               ) : (

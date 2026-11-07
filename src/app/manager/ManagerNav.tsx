@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DemoClock } from "@/components/DemoClock";
+import { ResetDemo } from "./ResetDemo";
 
 const LINKS = [
   ["/manager", "Overview"],
   ["/manager/team", "Team & lists"],
   ["/manager/promises", "Promises"],
+  ["/manager/compliance", "Compliance"],
   ["/manager/import", "Daily import"],
   ["/manager/model", "Priority model"],
 ] as const;
@@ -88,7 +90,8 @@ export function ManagerNav({
 
       <div className="hidden space-y-3 px-5 pt-8 lg:block">
         {demo && <DemoClock />}
-        <button onClick={signOut} className="text-sm text-muted hover:text-ink">
+        {demo && role === "head" && <ResetDemo />}
+        <button onClick={signOut} className="block text-sm text-muted hover:text-ink">
           Sign out
         </button>
       </div>

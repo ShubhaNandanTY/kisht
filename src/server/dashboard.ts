@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import type { DB } from "@/db/client";
-import { branches, contactAttempts, imports, loans, messages, modelVersions, outcomes, promises, snapshots, users } from "@/db/schema";
+import { auditLog, branches, contactAttempts, imports, loans, messages, modelVersions, outcomes, promises, snapshots, users } from "@/db/schema";
 import { episodes, rollRates, trailingRollRate, type Snap } from "@/domain/rollRate";
 import { nextBucket } from "@/domain/scoring/features";
 import { auc, evaluate } from "@/domain/scoring/model";
@@ -318,3 +318,75 @@ export async function importHistory(db: DB, limit = 10) {
 }
 
 export { daysBetween };
+
+/**
+ * RBI and DPDP evidence in one place: every blocked contact attempt, visits whose GPS or timing
+ * needs a second look, and who did what in the app. Last 30 days, scoped to the manager's branch.
+ */
+export async function complianceReport(db: DB, branchId: string | null, today: string) {
+  const since = istInstant(addDays(today, -30), 0);
+  const inBranch = branchId ? eq(users.branchId, branchId) : undefined;
+
+  const attempts = await db
+    .select({ allowed: contactAttempts.allowed, channel: contactAttempts.channel })
+    .from(contactAttempts)
+    .innerJoin(users, eq(users.id, contactAttempts.officerId))
+    .where(and(gte(contactAttempts.at, since), inBranch));
+  const blocked = await db
+    .select({
+      id: contactAttempts.id,
+      at: contactAttempts.at,
+      channel: contactAttempts.channel,
+      reason: contactAttempts.blockReason,
+      viaSync: contactAttempts.viaSync,
+      officer: users.name,
+      loanId: loans.id,
+      borrower: loans.borrowerName,
+    })
+    .from(contactAttempts)
+    .innerJoin(users, eq(users.id, contactAttempts.officerId))
+    .innerJoin(loans, eq(loans.id, contactAttempts.loanId))
+    .where(and(gte(contactAttempts.at, since), eq(contactAttempts.allowed, false), inBranch))
+    .orderBy(desc(contactAttempts.at))
+    .limit(60);
+
+  const visits = await db
+    .select({
+      id: outcomes.id,
+      occurredAt: outcomes.occurredAt,
+      capturedAt: outcomes.capturedAt,
+      type: outcomes.type,
+      gpsStatus: outcomes.gpsStatus,
+      distanceM: outcomes.distanceM,
+      flags: outcomes.flags,
+      officer: users.name,
+      loanId: loans.id,
+      borrower: loans.borrowerName,
+    })
+    .from(outcomes)
+    .innerJoin(users, eq(users.id, outcomes.officerId))
+    .innerJoin(loans, eq(loans.id, outcomes.loanId))
+    .where(and(gte(outcomes.occurredAt, since), inBranch))
+    .orderBy(desc(outcomes.occurredAt));
+  const flagged = visits.filter((v) => v.flags.some((f) => f !== "synced_late"));
+
+  const audit = await db
+    .select({ id: auditLog.id, at: auditLog.at, action: auditLog.action, entity: auditLog.entity, entityId: auditLog.entityId, user: users.name })
+    .from(auditLog)
+    .leftJoin(users, eq(users.id, auditLog.userId))
+    .where(branchId ? sql`${users.branchId} = ${branchId} or ${auditLog.userId} is null` : undefined)
+    .orderBy(desc(auditLog.at))
+    .limit(40);
+
+  const count = (f: string) => visits.filter((v) => v.flags.includes(f)).length;
+  return {
+    attempts: attempts.length,
+    blockedCount: attempts.filter((a) => !a.allowed).length,
+    blocked: blocked.map((b) => ({ ...b, at: b.at.toISOString() })),
+    visits: visits.length,
+    withGps: visits.filter((v) => v.gpsStatus === "ok").length,
+    counts: { far: count("far_from_borrower"), late: count("late_entry"), nextDay: count("logged_next_day"), noGps: visits.filter((v) => v.gpsStatus !== "ok").length, clock: count("device_clock_suspect") },
+    flagged: flagged.slice(0, 60).map((v) => ({ ...v, occurredAt: v.occurredAt.toISOString(), capturedAt: v.capturedAt.toISOString() })),
+    audit: audit.map((a) => ({ ...a, at: a.at.toISOString() })),
+  };
+}

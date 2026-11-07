@@ -229,3 +229,16 @@ describe("AI-drafted reminders", () => {
     expect(d).toMatchObject({ aiStatus: "rejected", ai: null, aiProblems: expect.arrayContaining(["wrong_amount"]) });
   });
 });
+
+describe("compliance report", () => {
+  it("lists blocked attempts and flagged visits, scoped to the branch", async () => {
+    const { complianceReport } = await import("@/server/dashboard");
+    const snr = await complianceReport(db, "SNR", TODAY);
+    expect(snr.blockedCount).toBeGreaterThanOrEqual(2);
+    expect(snr.blocked.map((b) => b.reason)).toEqual(expect.arrayContaining(["outside_contact_hours", "after_7pm"]));
+    expect(snr.flagged.some((v) => v.flags.includes("far_from_borrower"))).toBe(true);
+    const syg = await complianceReport(db, "SYG", TODAY);
+    expect(syg.blockedCount).toBe(0);
+    expect(syg.blocked).toEqual([]);
+  });
+});
